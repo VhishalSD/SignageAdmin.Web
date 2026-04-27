@@ -1,0 +1,97 @@
+﻿<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>@ViewData["Title"] - Signage Beheer</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="~/SignageAdmin.Web.styles.css" asp-append-version="true"/>
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+<div class="bg" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+<div class="noise" aria-hidden="true"></div>
+<canvas id="waveCanvas" aria-hidden="true"></canvas>
+
+<header class="app-layer">
+    <nav class="navbar navbar-dark bg-dark shadow-sm border-bottom border-secondary-subtle mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-semibold" asp-area="" asp-page="/Index">Signage Beheer</a>
+            <span class="text-white-50 small text-uppercase">Admin omgeving</span>
+        </div>
+    </nav>
+</header>
+
+<div class="container-xxl flex-grow-1 app-layer">
+    <main role="main" class="pb-4">
+        @RenderBody()
+    </main>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+<script>
+    (function () {
+        const canvas = document.getElementById('waveCanvas');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        let W = 0;
+        let H = 0;
+        let time = 0;
+        const LINES = 42;
+
+        function resize() {
+            W = canvas.width = window.innerWidth;
+            H = canvas.height = window.innerHeight;
+        }
+
+        function waveY(x, lineIndex, t) {
+            const progress = lineIndex / LINES;
+            const baseY = H * 0.46 + progress * H * 0.58;
+            const slope = -0.20;
+            const bell = Math.sin(progress * Math.PI);
+            const amplitude = 30 * bell;
+            const wavelength = W * 0.52;
+            const phase = (x / wavelength) * Math.PI * 2;
+            const timePhase = t * 0.75 + lineIndex * 0.15;
+            return baseY + x * slope + Math.sin(phase - timePhase) * amplitude;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, W, H);
+
+            for (let i = 0; i < LINES; i++) {
+                const progress = i / LINES;
+                const bell = Math.sin(progress * Math.PI);
+                const alpha = 0.06 + bell * 0.25;
+
+                ctx.beginPath();
+                ctx.strokeStyle = `rgba(255,255,255,${alpha.toFixed(3)})`;
+                ctx.lineWidth = 0.65;
+
+                for (let x = -10; x <= W + 10; x += 2) {
+                    const y = waveY(x, i, time);
+                    if (x === -10) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+
+                ctx.stroke();
+            }
+
+            time += 0.011;
+            requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        draw();
+    })();
+</script>
+
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schermweergave</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #000;
+            font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            width: 1080px;
+            height: 1920px;
+            background-color: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .player-message {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 80px;
+            font-size: 42px;
+            font-weight: 700;
+            line-height: 1.4;
+            color: #2b2b2b;
+            background: linear-gradient(180deg, #ffffff 0%, #f7f7f7 100%);
+            z-index: 9999;
+        }
+
+        /* ════════════════════════════════════════════
+           TEMPLATE A – RELIPLAN (bordeaux)
+        ════════════════════════════════════════════ */
+        #tpl-reliplan {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+        }
+
+        #tpl-reliplan::before {
+            content: '';
+            position: absolute;
+            inset: 18px;
+            border: 3px solid #7a0030;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .rp-header {
+            padding: 44px 60px 18px;
+            text-align: center;
+            background: #fff;
+        }
+
+        .rp-status {
+            font-size: 100px;
+            font-weight: 900;
+            color: #7a0030;
+            letter-spacing: 8px;
+            line-height: 1;
+            font-family: Georgia, serif;
+            text-transform: uppercase;
+        }
+
+        .rp-status-wrap {
+            display: flex;
+            justify-content: center;
+        }
+
+        .rp-status-banner {
+            display: inline-block;
+            background: #7a0030;
+            color: #ffffff !important;
+            padding: 16px 38px 12px;
+            border-radius: 999px;
+            font-size: 62px;
+            letter-spacing: 5px;
+            line-height: 1;
+            box-shadow: 0 10px 24px rgba(122, 0, 48, 0.18);
+        }
+
+        .rp-divider-thick {
+            height: 4px;
+            background: #7a0030;
+            margin: 14px 50px 4px;
+        }
+
+        .rp-divider-thin {
+            height: 1px;
+            background: #7a0030;
+            margin: 0 50px;
+        }
+
+        .rp-address {
+            text-align: center;
+            padding: 22px 60px 20px;
+            background: #fff;
+        }
+
+        .rp-title {
+            font-size: 42px;
+            font-weight: bold;
+            color: #7a0030;
+        }
+
+        .rp-location {
+            font-size: 30px;
+            color: #666;
+            margin-top: 6px;
+        }
+
+        .rp-photo {
+            margin: 0 40px;
+            flex: 1;
+            overflow: hidden;
+            border: 2px solid #ccc;
+            min-height: 0;
+        }
+
+        .rp-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+            transition: opacity 0.8s ease;
+        }
+
+        .rp-price-bar {
+            display: flex;
+            margin: 0 40px;
+            min-height: 155px;
+            flex-shrink: 0;
+        }
+
+        .rp-price-block {
+            background: #7a0030;
+            color: #fff;
+            padding: 24px 36px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .rp-price-label {
+            font-size: 26px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .rp-price-value {
+            font-size: 48px;
+            font-weight: 900;
+        }
+
+        .rp-logo-block {
+            background: #fff;
+            border: 2px solid #7a0030;
+            border-left: none;
+            min-width: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 30px;
+        }
+
+        .rp-logo-block img {
+            max-width: 220px;
+            max-height: 100px;
+            object-fit: contain;
+        }
+
+        .rp-desc {
+            background: #7a0030;
+            margin: 0 40px;
+            padding: 26px 36px;
+            color: #f0d0d8;
+            font-size: 21px;
+            line-height: 1.65;
+            flex-shrink: 0;
+        }
+
+        .rp-footer {
+            background: #fff;
+            padding: 16px 55px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 20px;
+            color: #888;
+            flex-shrink: 0;
+        }
+
+        /* ════════════════════════════════════════════
+           TEMPLATE B – VASTGOED EXPERTS (groen)
+        ════════════════════════════════════════════ */
+        #tpl-vge {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .vge-header {
+            background: #3cb54a;
+            color: #fff;
+            text-align: center;
+            font-size: 148px;
+            font-weight: 900;
+            letter-spacing: 18px;
+            text-transform: uppercase;
+            padding: 52px 0 44px;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .vge-photo {
+            position: relative;
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .vge-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: opacity 0.8s ease;
+        }
+
+        .vge-info-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            min-height: 160px;
+        }
+
+        .vge-adres {
+            background: rgba(255,255,255,0.93);
+            flex: 1;
+            padding: 28px 38px 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .vge-straat {
+            font-size: 46px;
+            font-weight: 800;
+            color: #1a1a1a;
+            line-height: 1.05;
+        }
+
+        .vge-stad {
+            font-size: 28px;
+            font-weight: 400;
+            color: #333;
+            margin-top: 8px;
+        }
+
+        .vge-prijs-blok {
+            background: #3cb54a;
+            width: 340px;
+            flex-shrink: 0;
+            padding: 28px 36px 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .vge-prijs-label {
+            font-size: 18px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.88);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .vge-prijs-bedrag {
+            font-size: 34px;
+            font-weight: 800;
+            color: #fff;
+            margin-top: 8px;
+            line-height: 1.1;
+        }
+
+        .vge-energie {
+            font-size: 18px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.9);
+            margin-top: 10px;
+        }
+
+        .vge-green-block {
+            background: #3cb54a;
+            height: 168px;
+            flex-shrink: 0;
+        }
+
+        .vge-footer {
+            background: #fff;
+            border-top: 2px solid #e5e5e5;
+            padding: 28px 44px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .vge-logo {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .vge-logo-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .vge-pin {
+            width: 42px;
+            height: 42px;
+            fill: #3cb54a;
+            flex-shrink: 0;
+        }
+
+        .vge-logo-text {
+            font-size: 26px;
+            font-weight: 900;
+            color: #1a1a1a;
+        }
+
+        .vge-logo-text em {
+            font-style: normal;
+            color: #3cb54a;
+        }
+
+        .vge-tagline {
+            font-size: 14px;
+            color: #aaa;
+            font-style: italic;
+            font-weight: 400;
+            margin-top: 5px;
+            margin-left: 54px;
+        }
+
+        .vge-contact {
+            text-align: right;
+            font-size: 19px;
+            color: #444;
+            line-height: 1.9;
+            font-weight: 500;
+        }
+
+        .vge-contact a {
+            color: #3cb54a;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .vge-footer-bottom {
+            background: #fff;
+            padding: 10px 44px 18px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            color: #aaa;
+            flex-shrink: 0;
+        }
+
+        /* ════════════════════════════════════════════
+           HYPOTHEEK SLIDE
+        ════════════════════════════════════════════ */
+
+        #tpl-hypotheek {
+            display: none;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            flex-direction: column;
+            font-family: 'Montserrat', sans-serif;
+            min-height: 0;
+        }
+
+        .hyp-top {
+            padding: 60px 70px 50px;
+            border-bottom: 3px solid #f0f0f0;
+            flex-shrink: 0;
+        }
+
+        .hyp-stair-row {
+            display: flex;
+            align-items: center;
+            gap: 60px;
+            margin-bottom: 44px;
+        }
+
+        .hyp-cta {
+            font-size: 46px;
+            font-weight: 700;
+            color: #2a2a2a;
+            line-height: 1.2;
+        }
+
+        .hyp-cta strong {
+            color: #e87722;
+            font-weight: 900;
+        }
+
+        .hyp-logo {
+            height: 90px;
+            object-fit: contain;
+            margin-bottom: 32px;
+        }
+
+        .hyp-contact {
+            display: flex;
+            align-items: center;
+            gap: 50px;
+            font-size: 26px;
+            font-weight: 600;
+            color: #2a2a2a;
+        }
+
+        .hyp-contact-item {
+            display:flex;
+            align-items:center;
+            gap:12px;
+        }
+
+        .hyp-divider {
+            height: 8px;
+            background: linear-gradient(90deg,#e87722 0%,#f5a55a 100%);
+        }
+
+        .hyp-rente {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f8f8f8;
+            flex: 1;
+            min-height: 0;
+            padding: 40px 40px 60px;
+        }
+
+        .hyp-rente-label {
+            background: #2a2a2a;
+            color: #fff;
+            text-align: center;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            padding: 24px;
+            text-transform: uppercase;
+        }
+
+        .hyp-rente-img {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+        }
+
+        .hyp-rente-img img {
+            display: block;
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+    </style>
+
+</head>
+<body>
+<div class="container">
+
+    <div id="player-message" class="player-message">Slides worden geladen...</div>
+
+    <!-- ══ TEMPLATE A: RELIPLAN ══ -->
+    <div id="tpl-reliplan">
+        <div class="rp-header">
+            <div class="rp-status-wrap">
+                <div class="rp-status" id="rp-status">TE KOOP</div>
+            </div>
+        </div>
+        <div class="rp-divider-thick" id="rp-divider-thick"></div>
+        <div class="rp-divider-thin"  id="rp-divider-thin"></div>
+        <div class="rp-address">
+            <div class="rp-title"    id="rp-title"></div>
+            <div class="rp-location" id="rp-location"></div>
+        </div>
+        <div class="rp-photo">
+            <img id="rp-image" src="" alt="">
+        </div>
+        <div class="rp-price-bar">
+            <div class="rp-price-block" id="rp-price-block">
+                <div class="rp-price-label">Vraagprijs:</div>
+                <div class="rp-price-value" id="rp-price"></div>
+            </div>
+            <div class="rp-logo-block" id="rp-logo-block">
+                <img src="https://www.reliplan.nl/img/logo-Reliplan.png" alt="Reliplan">
+            </div>
+        </div>
+        <div class="rp-desc" id="rp-desc"></div>
+        <div class="rp-footer">
+            <div id="rp-weather">Weer laden...</div>
+            <div id="rp-datetime"></div>
+        </div>
+    </div>
+
+    <!-- ══ TEMPLATE B: VASTGOED EXPERTS ══ -->
+    <div id="tpl-vge">
+        <div class="vge-header" id="vge-status">TE KOOP</div>
+        <div class="vge-photo">
+            <img id="vge-image" src="" alt="">
+            <div class="vge-info-bar">
+                <div class="vge-adres">
+                    <div class="vge-straat" id="vge-title"></div>
+                    <div class="vge-stad"   id="vge-location"></div>
+                </div>
+                <div class="vge-prijs-blok">
+                    <div class="vge-prijs-label">Vraagprijs</div>
+                    <div class="vge-prijs-bedrag" id="vge-price"></div>
+                    <div class="vge-energie"      id="vge-energie"></div>
+                </div>
+            </div>
+        </div>
+        <div class="vge-green-block"></div>
+        <div class="vge-footer">
+            <div class="vge-logo">
+                <div class="vge-logo-row">
+                    <svg class="vge-pin" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
+                    </svg>
+                    <span class="vge-logo-text">dé <em>VASTGOED EXPERTS</em></span>
+                </div>
+                <div class="vge-tagline">Transparant en betrokken</div>
+            </div>
+            <div class="vge-contact">
+                088-1669500<br>
+                <a href="mailto:kantoor@devastgoedexperts.nl">kantoor@devastgoedexperts.nl</a><br>
+                <a href="https://devastgoedexperts.nl" target="_blank">devastgoedexperts.nl</a>
+            </div>
+        </div>
+        <div class="vge-footer-bottom">
+            <div id="vge-weather">Weer laden...</div>
+            <div id="vge-datetime"></div>
+        </div>
+    </div>
+
+    <!-- ══ HYPOTHEEK SLIDE ══ -->
+    <div id="tpl-hypotheek">
+
+        <div class="hyp-top">
+
+            <div class="hyp-stair-row">
+
+                <!-- Pixel-perfect trap + stickman -->
+                <svg
+                        width="260"
+                        height="220"
+                        viewBox="0 0 260 220"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        stroke="#e87722"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                >
+
+                    <!-- Trap -->
+                    <polyline
+                            points="
+            10,205
+            48,205 48,175
+            90,175 90,145
+            132,145 132,115
+            174,115 174,85
+            216,85 216,55
+            250,55
+          "
+                            stroke-width="10"
+                    />
+
+                    <!-- Stickman -->
+                    <g stroke-width="8">
+
+                        <!-- hoofd -->
+                        <circle cx="158" cy="28" r="14"/>
+
+                        <!-- romp -->
+                        <line x1="158" y1="42" x2="158" y2="76"/>
+
+                        <!-- armen -->
+                        <line x1="158" y1="58" x2="176" y2="68" stroke-width="7"/>
+                        <line x1="158" y1="58" x2="142" y2="72" stroke-width="7"/>
+
+                        <!-- been voor (voet exact op trede y=85) -->
+                        <line x1="158" y1="76" x2="172" y2="85"/>
+                        <line x1="172" y1="85" x2="182" y2="85" stroke-width="7"/>
+
+                        <!-- been achter (ook exact op y=85) -->
+                        <line x1="158" y1="76" x2="146" y2="90"/>
+                        <line x1="146" y1="90" x2="136" y2="85" stroke-width="7"/>
+
+                    </g>
+                </svg>
+
+                <div class="hyp-cta">
+                    Wij zitten op de<br>
+                    <strong>1e verdieping</strong> &mdash;<br>
+                    loop even naar boven!
+                </div>
+
+            </div>
+
+            <!-- LOGO -->
+            <img class="hyp-logo"
+                 src="https://definancieleexperts.nl/media/cache/logo_breed/media/licentie/427/De_financiele_experts.jpg"
+                 alt="dé Financiële Experts">
+
+            <div class="hyp-contact">
+                <div class="hyp-contact-item">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="#e87722">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
+                    </svg>
+                    Raadhuisplein 4, Nieuwerkerk a/d IJssel
+                </div>
+                <div>088-1669555</div>
+            </div>
+
+        </div>
+
+        <div class="hyp-divider"></div>
+
+        <div class="hyp-rente">
+            <div class="hyp-rente-label">Actuele Hypotheekrentes</div>
+            <div class="hyp-rente-img">
+                <img
+                        src="https://adviesmodules.nl/api/public/images/rentes/ec5054cbc1e3931c31b00a69404fc86efddc8c1a08d5634824e28230240d1502.gif"
+                        alt="Actuele hypotheekrentes"
+                >
+            </div>
+        </div>
+
+    </div>
+
+
+</div>
+<script>
+    function createPlaceholderDataUrl(backgroundColor, label) {
+        var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">'
+            + '<rect width="1080" height="1920" fill="' + backgroundColor + '"/>'
+            + '<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" '
+            + 'font-family="Montserrat, Arial, Helvetica, sans-serif" font-size="72" font-weight="700" fill="white">' + label + '</text>'
+            + '</svg>';
+
+        return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+    }
+    var WEATHER_API_KEY = "06322c6a982ff2505e5e14fddfe13da9";
+    var WEATHER_CITY    = "Nieuwerkerk aan den IJssel";
+    var DATA_URL        = "/data/slides.json?v=" + Date.now();
+    var RELIPLAN_PLACEHOLDER = createPlaceholderDataUrl("#7a0030", "Afbeelding Reliplan");
+    var VGE_PLACEHOLDER      = createPlaceholderDataUrl("#3cb54a", "Afbeelding Vastgoed Experts");
+    var DEFAULT_SLIDE_DURATION = 10000;
+
+
+    var currentIndex = 0;
+    var properties   = [];
+
+    function showPlayerMessage(message) {
+        var messageEl = document.getElementById('player-message');
+        if (messageEl) {
+            messageEl.textContent = message;
+            messageEl.style.display = 'flex';
+        }
+    }
+
+    function hidePlayerMessage() {
+        var messageEl = document.getElementById('player-message');
+        if (messageEl) {
+            messageEl.style.display = 'none';
+        }
+    }
+
+
+    function normalizeSlides(data) {
+        return (data || [])
+            .filter(function(item) {
+                var isActief = (typeof item.IsActief !== "undefined") ? item.IsActief : item.isActief;
+                return isActief !== false;
+            })
+            .sort(function(a, b) {
+                var aVolgorde = parseInt(a.Volgorde || a.volgorde || 0, 10);
+                var bVolgorde = parseInt(b.Volgorde || b.volgorde || 0, 10);
+                return aVolgorde - bVolgorde;
+            })
+            .map(function(item) {
+                return {
+                    id: (item.Id || item.id || 0),
+                    type: ((item.Type || item.type || "pand") + "").trim(),
+                    bedrijf: ((item.Bedrijf || item.bedrijf || "") + "").trim(),
+                    status: ((item.Status || item.status || "") + "").trim(),
+                    titel: ((item.Titel || item.titel || "") + "").trim(),
+                    plaats: ((item.Plaats || item.plaats || "") + "").trim(),
+                    prijs: ((item.Prijs || item.prijs || "") + "").trim(),
+                    energielabel: ((item.EnergieLabel || item.energielabel || "") + "").trim(),
+                    afbeelding: ((item.Afbeelding || item.afbeelding || "") + "").trim(),
+                    extra: ((item.Extra || item.extra || "") + "").trim(),
+                    isActief: (typeof item.IsActief !== "undefined") ? item.IsActief : item.isActief,
+                    volgorde: parseInt(item.Volgorde || item.volgorde || 0, 10),
+                    durationSeconds: parseInt(item.DurationSeconds || item.durationSeconds || 10, 10)
+                };
+            });
+    }
+
+
+    function getRpColor() {
+        return "#7a0030";
+    }
+
+    function applyRpColor(color) {
+        document.getElementById('rp-price-block').style.background   = color;
+        document.getElementById('rp-desc').style.background          = color;
+        document.getElementById('rp-divider-thick').style.background = color;
+        document.getElementById('rp-divider-thin').style.background  = color;
+        document.getElementById('rp-status').style.color             = color;
+        document.getElementById('rp-logo-block').style.borderColor   = color;
+
+        var styleTag = document.getElementById('rp-dynamic-border');
+        if (!styleTag) {
+            styleTag    = document.createElement('style');
+            styleTag.id = 'rp-dynamic-border';
+            document.head.appendChild(styleTag);
+        }
+        styleTag.textContent = '#tpl-reliplan::before { border-color: ' + color + ' !important; }';
+    }
+
+    function renderSlide(item) {
+        var tplRp  = document.getElementById('tpl-reliplan');
+        var tplVge = document.getElementById('tpl-vge');
+        var tplHyp = document.getElementById('tpl-hypotheek');
+        var type    = (item.type    || "pand").trim().toLowerCase();
+        var bedrijf = (item.bedrijf || "").trim().toLowerCase();
+
+        tplRp.style.display  = "none";
+        tplVge.style.display = "none";
+        tplHyp.style.display = "none";
+
+        if (type === "hypotheek") {
+            tplHyp.style.display = "flex";
+            return;
+        }
+
+        if (bedrijf.indexOf("vastgoed") !== -1 || bedrijf === "vge") {
+            tplVge.style.display = "flex";
+
+            var statusText = (item.status || "TE KOOP").toUpperCase();
+            document.getElementById('vge-status').textContent  = statusText;
+            document.getElementById('vge-status').style.background = (statusText.indexOf("VERKOCHT") !== -1) ? "#c0392b" : "#3cb54a";
+            document.getElementById('vge-title').textContent    = item.titel    || "";
+            document.getElementById('vge-location').textContent = item.plaats   || "";
+            document.getElementById('vge-price').textContent    = item.prijs    || "";
+
+            var energieEl = document.getElementById('vge-energie');
+            var energielabel = (item.energielabel || item["energielabel"] || "").toString().trim();
+            energieEl.textContent = energielabel ? "Energielabel: " + energielabel : "";
+
+            fadeImage(document.getElementById('vge-image'), item.afbeelding || "", VGE_PLACEHOLDER);
+            return;
+        }
+
+        tplRp.style.display = "flex";
+        var color = getRpColor(item.status);
+        applyRpColor(color);
+
+        var rpStatusEl = document.getElementById('rp-status');
+        var rpStatusText = (item.status || "TE KOOP").toUpperCase();
+        rpStatusEl.textContent = rpStatusText;
+
+        if (rpStatusText.indexOf("VERKOCHT") !== -1 || rpStatusText.indexOf("VERHUURD") !== -1) {
+            rpStatusEl.classList.add('rp-status-banner');
+        } else {
+            rpStatusEl.classList.remove('rp-status-banner');
+        }
+        document.getElementById('rp-title').textContent    = item.titel  || "";
+        document.getElementById('rp-location').textContent = item.plaats || "";
+        document.getElementById('rp-price').textContent    = item.prijs || "Prijs op aanvraag";
+        document.getElementById('rp-desc').textContent     = item.extra  || "";
+
+        fadeImage(document.getElementById('rp-image'), item.afbeelding || "", RELIPLAN_PLACEHOLDER);
+    }
+
+    function fadeImage(imgEl, src, fallbackSrc) {
+        if (!imgEl) return;
+
+        var requestedSrc = (src || "").trim();
+        var finalSrc = requestedSrc || fallbackSrc || "";
+
+        if (!finalSrc) {
+            imgEl.style.opacity = 0;
+            imgEl.removeAttribute("src");
+            return;
+        }
+
+        imgEl.style.transition = "opacity 0.6s ease";
+        imgEl.style.opacity = 0;
+
+        setTimeout(function() {
+            var newImg = new Image();
+
+            newImg.onload = function() {
+                imgEl.src = finalSrc;
+                imgEl.offsetHeight;
+                imgEl.style.opacity = 1;
+            };
+
+            newImg.onerror = function() {
+                if (fallbackSrc && finalSrc !== fallbackSrc) {
+                    var fallbackImg = new Image();
+
+                    fallbackImg.onload = function() {
+                        imgEl.src = fallbackSrc;
+                        imgEl.offsetHeight;
+                        imgEl.style.opacity = 1;
+                    };
+
+                    fallbackImg.onerror = function() {
+                        imgEl.style.opacity = 0;
+                        imgEl.removeAttribute("src");
+                        console.warn("Placeholder kon ook niet laden:", fallbackSrc);
+                    };
+
+                    fallbackImg.src = fallbackSrc;
+                    return;
+                }
+
+                imgEl.style.opacity = 0;
+                imgEl.removeAttribute("src");
+                console.warn("Afbeelding kon niet laden:", finalSrc);
+            };
+
+            newImg.src = finalSrc;
+        }, 600);
+    }
+    function getSlideDuration(item) {
+        var seconds = parseInt(item.durationSeconds || 10, 10);
+
+        if (isNaN(seconds) || seconds < 1) {
+            seconds = DEFAULT_SLIDE_DURATION / 1000;
+        }
+
+        return seconds * 1000;
+    }
+
+    function startSlideshow() {
+        if (!properties.length) return;
+
+        hidePlayerMessage();
+        renderSlide(properties[currentIndex]);
+
+        function nextSlide() {
+            var currentItem = properties[currentIndex];
+            var delay = getSlideDuration(currentItem);
+
+            setTimeout(function() {
+                currentIndex = (currentIndex + 1) % properties.length;
+                renderSlide(properties[currentIndex]);
+                nextSlide();
+            }, delay);
+        }
+
+        nextSlide();
+    }
+
+    fetch(DATA_URL)
+        .then(function(r) {
+            if (!r.ok) { throw new Error("HTTP " + r.status); }
+            return r.json();
+        })
+        .then(function(json) {
+            var data = normalizeSlides(json);
+            if (!data.length) {
+                console.error("Er zijn geen actieve slides beschikbaar.");
+                showPlayerMessage("Er zijn momenteel geen actieve slides beschikbaar.");
+                return;
+            }
+            properties = data;
+            startSlideshow();
+        })
+        .catch(function(e) {
+            console.error("JSON fout:", e);
+            showPlayerMessage("De schermgegevens konden niet worden geladen. Controleer de koppeling met het beheerscherm.");
+        });
+
+    function updateDateTime() {
+        var now  = new Date();
+        var date = now.toLocaleDateString('nl-NL', {
+            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+        });
+        date = date.charAt(0).toUpperCase() + date.slice(1);
+        var hh  = String(now.getHours()).padStart(2, '0');
+        var mm  = String(now.getMinutes()).padStart(2, '0');
+        var ss  = String(now.getSeconds()).padStart(2, '0');
+        var str = date + " | " + hh + ":" + mm + ":" + ss;
+        document.getElementById('rp-datetime').textContent  = str;
+        document.getElementById('vge-datetime').textContent = str;
+    }
+    setInterval(updateDateTime, 1000);
+    updateDateTime();
+
+    function updateWeather() {
+        var url = "https://api.openweathermap.org/data/2.5/weather?q="
+            + encodeURIComponent(WEATHER_CITY)
+            + ",NL&units=metric&lang=nl&appid=" + WEATHER_API_KEY;
+        fetch(url)
+            .then(function(r) {
+                if (!r.ok) { throw new Error(); }
+                return r.json();
+            })
+            .then(function(d) {
+                if (d.cod !== 200) { setWeather("Weer niet beschikbaar"); return; }
+                var temp = Math.round(d.main.temp);
+                var desc = d.weather[0].description;
+                var icon = '<img src="https://openweathermap.org/img/wn/' + d.weather[0].icon + '@2x.png" style="vertical-align:middle;width:26px;" alt="' + desc + '">';
+                var str  = icon + " " + WEATHER_CITY + " | " + temp + "\u00b0C | " + desc;
+                document.getElementById('rp-weather').innerHTML  = str;
+                document.getElementById('vge-weather').innerHTML = str;
+            })
+            .catch(function() { setWeather("Weer niet beschikbaar"); });
+    }
+
+    function setWeather(msg) {
+        document.getElementById('rp-weather').textContent  = msg;
+        document.getElementById('vge-weather').textContent = msg;
+    }
+
+    updateWeather();
+    setInterval(updateWeather, 1800000);
+
+</script>
+</body>
+</html>

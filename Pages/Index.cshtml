@@ -1,0 +1,905 @@
+﻿@page
+@model SignageAdmin.Web.Pages.IndexModel
+@{
+    ViewData["Title"] = "Signage beheer";
+    var totaal = Model.Slides.Count;
+    var actieve = Model.SlidesForPreview.Count;
+    var panden = Model.SlidesForPreview.Count(slide => slide.Type != "hypotheek");
+    var inactieve = Model.Slides.Count(slide => !slide.IsActief);
+    var actieveSlides = Model.SlidesForPreview.ToList();
+    var inactieveSlides = Model.Slides.Where(slide => !slide.IsActief).ToList();
+}
+
+<style>
+    .admin-subtitle {
+        color: #cbd5e1;
+        font-weight: 500;
+        margin-bottom: 0;
+    }
+
+    .admin-page-title {
+        color: #f8fafc;
+    }
+
+    .admin-page-subtitle {
+        color: #cbd5e1;
+        font-weight: 500;
+        margin-bottom: 0;
+    }
+
+    .section-count {
+        color: #d1d5db;
+        font-weight: 500;
+    }
+
+    .surface-card {
+        background: rgba(255, 255, 255, 0.38);
+        border: 1px solid rgba(255, 255, 255, 0.14) !important;
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.14);
+        backdrop-filter: blur(18px) saturate(160%);
+        -webkit-backdrop-filter: blur(18px) saturate(160%);
+    }
+
+    .glass-table-wrap {
+        background: rgba(255, 255, 255, 0.16);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+        backdrop-filter: blur(18px) saturate(160%);
+        -webkit-backdrop-filter: blur(18px) saturate(160%);
+    }
+
+    .surface-table {
+        background: transparent;
+        margin-bottom: 0;
+    }
+
+    .surface-table thead th {
+        background: rgba(20, 20, 24, 0.76) !important;
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.12) !important;
+    }
+
+    .surface-table tbody td {
+        background: rgba(255, 255, 255, 0.38);
+        border-color: rgba(255, 255, 255, 0.14);
+    }
+
+    .surface-table tbody tr:nth-child(even) td {
+        background: rgba(255, 255, 255, 0.28);
+    }
+
+    .surface-table tbody tr:hover td {
+        background: rgba(255, 255, 255, 0.38);
+    }
+
+    .surface-table tbody tr:nth-child(even):hover td {
+        background: rgba(255, 255, 255, 0.28);
+    }
+
+    .surface-empty {
+        background: rgba(243, 235, 196, 0.92);
+        border: 1px solid rgba(169, 140, 46, 0.18);
+        color: #5d4b12;
+    }
+
+    .surface-card .card-header {
+        background: rgba(20, 20, 24, 0.76) !important;
+        color: #fff !important;
+    }
+
+    .surface-card .form-label,
+    .surface-card .form-section-title,
+    .surface-card h1,
+    .surface-card h2,
+    .surface-card h3,
+    .surface-card h4,
+    .surface-card h5,
+    .surface-card h6,
+    .surface-card .card-body,
+    .surface-card .card-body strong,
+    .surface-card .form-preview-title {
+        color: #f8fafc;
+    }
+
+    .surface-card .section-note,
+    .surface-card .text-muted,
+    .surface-card .admin-subtitle {
+        color: #d1d5db !important;
+        font-weight: 500;
+    }
+
+    .surface-card .form-control,
+    .surface-card .form-select,
+    .surface-card textarea {
+        background: rgba(255, 255, 255, 0.72);
+        border-color: rgba(0, 0, 0, 0.12);
+        color: #111827;
+    }
+
+    .surface-card .form-control::placeholder,
+    .surface-card textarea::placeholder {
+        color: #6b7280;
+    }
+
+
+    .admin-form .form-label {
+        font-weight: 600;
+        margin-bottom: 0.35rem;
+    }
+
+    .section-note {
+        color: #6c757d;
+        font-size: 0.95rem;
+    }
+
+    .actions-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(72px, 1fr));
+        gap: 0.3rem;
+        min-width: 160px;
+    }
+
+    .actions-grid form {
+        margin: 0;
+    }
+
+    .actions-grid .btn {
+        width: 100%;
+        white-space: nowrap;
+        padding: 0.28rem 0.45rem;
+        font-size: 0.78rem;
+        border-radius: 0.5rem;
+    }
+
+    .btn-move {
+        font-weight: 700;
+        letter-spacing: 0.02em;
+    }
+
+    .btn-action-neutral {
+        background: #fff;
+        border: 1px solid #d0d7de;
+        color: #495057;
+    }
+
+    .btn-action-neutral:hover {
+        background: #f8f9fa;
+        border-color: #b8c2cc;
+        color: #343a40;
+    }
+
+    .btn-action-edit {
+        background: #fff8e1;
+        border: 1px solid #ffe082;
+        color: #7a5a00;
+    }
+
+    .btn-action-edit:hover {
+        background: #ffefb3;
+        border-color: #ffd54f;
+        color: #5f4500;
+    }
+
+    .btn-action-toggle {
+        background: #f3f6f9;
+        border: 1px solid #cfd6dd;
+        color: #334155;
+    }
+
+    .btn-action-toggle:hover {
+        background: #e8edf2;
+        border-color: #bcc5cf;
+        color: #1f2937;
+    }
+
+    .btn-action-danger {
+        background: #fff5f5;
+        border: 1px solid #f5c2c7;
+        color: #b02a37;
+    }
+
+    .btn-action-danger:hover {
+        background: #ffe3e6;
+        border-color: #e7a4ab;
+        color: #8b1e2a;
+    }
+
+    .confirm-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1060;
+        padding: 1rem;
+    }
+
+    .confirm-modal {
+        width: min(420px, 92vw);
+        background: #fff;
+        border-radius: 0.85rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+    }
+
+    .confirm-modal-header {
+        padding: 1rem 1.25rem 0.5rem;
+        font-size: 1.05rem;
+        font-weight: 700;
+    }
+
+    .confirm-modal-body {
+        padding: 0 1.25rem 1rem;
+        color: #737b85;
+    }
+
+    .confirm-modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.65rem;
+        padding: 0 1.25rem 1.25rem;
+    }
+
+    .price-cell {
+        white-space: nowrap;
+    }
+
+    .table-clean .meta-text {
+        color: #d1d5db;
+        font-size: 0.9rem;
+        margin-top: 0.15rem;
+    }
+
+    .table-clean th,
+    .table-clean td {
+        vertical-align: middle;
+        color: #f3f4f6;
+    }
+
+    .inactive-section {
+        opacity: 0.92;
+    }
+
+    .inactive-section .table {
+        font-size: 0.92rem;
+    }
+
+    .inactive-section .badge {
+        font-size: 0.75rem;
+    }
+
+    .inactive-section .section-note {
+        font-size: 0.88rem;
+    }
+
+    .preview-frame {
+        width: 100%;
+        max-width: 260px;
+        aspect-ratio: 9 / 16;
+        margin: 0;
+        border: 1px solid #dee2e6;
+        border-radius: 0.75rem;
+        background: rgba(237, 240, 243, 0.95);
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.05);
+    }
+
+    .preview-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: #f8f9fa;
+    }
+
+    .form-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.9fr);
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    .form-preview-card {
+        background: rgba(255, 255, 255, 0.34);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.05);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+    }
+
+    .form-preview-card .form-preview-title {
+        color: #111827 !important;
+    }
+
+    .form-preview-card .section-note {
+        color: #9ca3af !important;
+    }
+
+    .form-preview-title {
+        font-weight: 600;
+        margin-bottom: 0.35rem;
+    }
+
+    .form-section-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #6c757d;
+        margin-bottom: 0.35rem;
+    }
+
+    .form-section-divider {
+        border-top: 1px solid #e9ecef;
+        padding-top: 1rem;
+        margin-top: 0.25rem;
+    }
+
+    @@media (max-width: 991.98px) {
+        .form-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .form-preview-card {
+            margin-top: 0.5rem;
+        }
+    }
+</style>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h1 class="mb-1 admin-page-title">Signage beheer</h1>
+            <p class="admin-page-subtitle">Beheer hier alle panden en schermen voor de weergave.</p>
+        </div>
+        <a asp-page="/Live" class="btn btn-dark">Open schermweergave</a>
+    </div>
+
+
+    @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+    {
+        <div id="successToast" class="position-fixed top-50 start-50 translate-middle shadow" style="z-index: 1055; width: min(420px, 90vw);">
+            <div class="card border-0">
+                <div class="card-body d-flex justify-content-between align-items-start gap-3">
+                    <div>
+                        <div class="fw-semibold text-success mb-1">Actie voltooid</div>
+                        <div>@Model.SuccessMessage</div>
+                    </div>
+                    <button type="button" class="btn-close" aria-label="Sluiten" onclick="document.getElementById('successToast').remove()"></button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            setTimeout(function () {
+                var toast = document.getElementById('successToast');
+                if (toast) {
+                    toast.remove();
+                }
+            }, 3000);
+        </script>
+    }
+
+    <div class="card shadow-sm border-0 mb-4 surface-card">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <span>@(Model.IsEditMode ? "Slide bewerken" : "Nieuwe slide toevoegen")</span>
+            @if (Model.IsEditMode)
+            {
+                <span class="badge bg-warning text-dark">Bewerkmodus</span>
+            }
+        </div>
+        <div class="card-body admin-form">
+            <form method="post">
+                <input type="hidden" name="EditId" value="@Model.EditId" />
+                <p class="section-note mb-3">Voeg hier een nieuwe slide toe of werk een bestaande slide bij. De velden zijn hieronder opgesplitst per onderdeel.</p>
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger">
+                        <strong>Controleer het formulier.</strong>
+                        <ul class="mb-0 mt-2">
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <li>@error.ErrorMessage</li>
+                            }
+                        </ul>
+                    </div>
+                }
+                <div class="form-layout">
+                    <div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="form-section-title">Algemene gegevens</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Soort slide</label>
+                                <select id="typeSelect" name="Type" class="form-select">
+                                    <option value="pand" selected="@(Model.Type == "pand")">Pand</option>
+                                    <option value="hypotheek" selected="@(Model.Type == "hypotheek")">Hypotheek</option>
+                                </select>
+                                <div class="section-note mt-1">Bij hypotheek wordt het bedrijf automatisch op De Financiële Experts gezet. Bij een pand is die keuze niet beschikbaar.</div>
+                                @if (ViewData.ModelState[nameof(Model.Type)]?.Errors.Count > 0)
+                                {
+                                    <div class="text-danger small mt-1">@ViewData.ModelState[nameof(Model.Type)]!.Errors[0].ErrorMessage</div>
+                                }
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Bedrijf</label>
+                                <select id="bedrijfSelect" name="Bedrijf" class="form-select">
+                                    <option value="">Kies een bedrijf</option>
+                                    <option value="Reliplan" selected="@(Model.Bedrijf == "Reliplan")">Reliplan</option>
+                                    <option value="Vastgoed Experts" selected="@(Model.Bedrijf == "Vastgoed Experts")">Vastgoed Experts</option>
+                                    <option value="De Financiële Experts" selected="@(Model.Bedrijf == "De Financiële Experts")">De Financiële Experts</option>
+                                </select>
+                                @if (ViewData.ModelState[nameof(Model.Bedrijf)]?.Errors.Count > 0)
+                                {
+                                    <div class="text-danger small mt-1">@ViewData.ModelState[nameof(Model.Bedrijf)]!.Errors[0].ErrorMessage</div>
+                                }
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Status</label>
+                                <select name="Status" class="form-select">
+                                    <option value="">Kies een status</option>
+                                    <option value="Te koop" selected="@(Model.Status == "Te koop")">Te koop</option>
+                                    <option value="Verkocht" selected="@(Model.Status == "Verkocht")">Verkocht</option>
+                                    <option value="Te huur" selected="@(Model.Status == "Te huur")">Te huur</option>
+                                    <option value="Verhuurd" selected="@(Model.Status == "Verhuurd")">Verhuurd</option>
+                                    <option value="Onder optie" selected="@(Model.Status == "Onder optie")">Onder optie</option>
+                                </select>
+                                @if (ViewData.ModelState[nameof(Model.Status)]?.Errors.Count > 0)
+                                {
+                                    <div class="text-danger small mt-1">@ViewData.ModelState[nameof(Model.Status)]!.Errors[0].ErrorMessage</div>
+                                }
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Zichtbaar</label>
+                                <select name="IsActief" class="form-select">
+                                    <option value="true" selected="@Model.IsActief">Ja</option>
+                                    <option value="false" selected="@(!Model.IsActief)">Nee</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Duur zichtbaar (seconden)</label>
+                                <input name="DurationSeconds" type="number" min="1" class="form-control" value="@Model.DurationSeconds" />
+                                <div class="section-note mt-1">Bijvoorbeeld 3, 10 of 18 seconden.</div>
+                                @if (ViewData.ModelState[nameof(Model.DurationSeconds)]?.Errors.Count > 0)
+                                {
+                                    <div class="text-danger small mt-1">@ViewData.ModelState[nameof(Model.DurationSeconds)]!.Errors[0].ErrorMessage</div>
+                                }
+                            </div>
+                            <div class="col-12 form-section-divider">
+                                <div class="form-section-title">Slide-inhoud</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Titel / adres</label>
+                                <input name="Titel" class="form-control" value="@Model.Titel" placeholder="Bijvoorbeeld: Kerklaan 12" />
+                                @if (ViewData.ModelState[nameof(Model.Titel)]?.Errors.Count > 0)
+                                {
+                                    <div class="text-danger small mt-1">@ViewData.ModelState[nameof(Model.Titel)]!.Errors[0].ErrorMessage</div>
+                                }
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Plaats</label>
+                                <input name="Plaats" class="form-control" value="@Model.Plaats" placeholder="Bijvoorbeeld: Rotterdam" />
+                                @if (ViewData.ModelState[nameof(Model.Plaats)]?.Errors.Count > 0)
+                                {
+                                    <div class="text-danger small mt-1">@ViewData.ModelState[nameof(Model.Plaats)]!.Errors[0].ErrorMessage</div>
+                                }
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Bedrag</label>
+                                <input name="Prijs" class="form-control" value="@Model.Prijs" placeholder="Bijvoorbeeld: 450000" />
+                                @if (ViewData.ModelState[nameof(Model.Prijs)]?.Errors.Count > 0)
+                                {
+                                    <div class="text-danger small mt-1">@ViewData.ModelState[nameof(Model.Prijs)]!.Errors[0].ErrorMessage</div>
+                                }
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Prijs toevoeging</label>
+                                <select name="PrijsSuffix" class="form-select">
+                                    <option value="" selected="@(string.IsNullOrWhiteSpace(Model.PrijsSuffix))">Geen toevoeging</option>
+                                    <option value="k.k." selected="@(Model.PrijsSuffix == "k.k.")">k.k.</option>
+                                    <option value="v.o.n." selected="@(Model.PrijsSuffix == "v.o.n.")">v.o.n.</option>
+                                    <option value="p.m." selected="@(Model.PrijsSuffix == "p.m.")">p.m.</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4" id="energieLabelWrapper">
+                                <label class="form-label">Energielabel</label>
+                                <input name="EnergieLabel" class="form-control" value="@Model.EnergieLabel" placeholder="Bijvoorbeeld: A of B" />
+                            </div>
+                            <div class="col-12 form-section-divider">
+                                <div class="form-section-title">Media</div>
+                            </div>
+                            <div class="col-12" id="afbeeldingWrapper">
+                                <label class="form-label">Afbeelding</label>
+                                <input id="afbeeldingInput" name="Afbeelding" class="form-control" value="@Model.Afbeelding" placeholder="Afbeeldingslink of bestandsnaam" />
+                                @if (ViewData.ModelState[nameof(Model.Afbeelding)]?.Errors.Count > 0)
+                                {
+                                    <div class="text-danger small mt-1">@ViewData.ModelState[nameof(Model.Afbeelding)]!.Errors[0].ErrorMessage</div>
+                                }
+                            </div>
+                            <div class="col-12" id="extraWrapper">
+                                <label class="form-label">Extra tekst</label>
+                                <textarea name="Extra" class="form-control" rows="6" placeholder="Extra tekst voor Reliplan of aanvullende toelichting">@Model.Extra</textarea>
+                                @if (ViewData.ModelState[nameof(Model.Extra)]?.Errors.Count > 0)
+                                {
+                                    <div class="text-danger small mt-1">@ViewData.ModelState[nameof(Model.Extra)]!.Errors[0].ErrorMessage</div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-preview-card">
+                        <div class="form-preview-title mb-2">Afbeeldingscontrole op scherm</div>
+                        <div id="formPreviewContent">
+                            <p class="section-note mb-3">Hier controleer je alleen of de juiste afbeelding is gekozen voor deze slide.</p>
+                            <div class="preview-frame mx-auto">
+                                <img id="afbeeldingPreview" src="" alt="Afbeeldingspreview" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">@(Model.IsEditMode ? "Wijzigingen opslaan" : "Slide opslaan")</button>
+                    @if (Model.IsEditMode)
+                    {
+                        <a asp-page="./Index" class="btn btn-secondary">Annuleren</a>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+            <h2 class="h5 mb-1 admin-page-title">Previewvolgorde</h2>
+            <p class="section-note mb-0">Deze tabel laat alleen actieve slides zien, in exact dezelfde volgorde als op het scherm.</p>
+        </div>
+        <span class="section-count">@Model.SlidesForPreview.Count actieve slide(s)</span>
+    </div>
+
+    @if (!Model.SlidesForPreview.Any())
+    {
+        <div class="alert surface-empty">Er zijn nog geen actieve slides gevonden voor het scherm.</div>
+    }
+    else
+    {
+        <div class="table-responsive glass-table-wrap">
+            <table class="table table-sm table-bordered align-middle surface-table table-clean">
+                <thead>
+                <tr>
+                    <th>Volgorde</th>
+                    <th>Soort</th>
+                    <th>Slide</th>
+                    <th>Bedrijf</th>
+                    <th>Prijs</th>
+                    <th>Zichtbaar</th>
+                    <th>Duur</th>
+                    <th>Acties</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var slide in actieveSlides)
+                {
+                    var isFirstSlide = actieveSlides.First().Id == slide.Id;
+                    var isLastSlide = actieveSlides.Last().Id == slide.Id;
+                    <tr>
+                        <td>@slide.Volgorde</td>
+                        <td>
+                            <span class="badge @(slide.Type == "hypotheek" ? "bg-secondary" : "bg-primary")">@slide.Type</span>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">@slide.Titel</div>
+                            <div class="meta-text">@slide.Plaats</div>
+                        </td>
+                        <td>
+                            <span class="fw-semibold">@slide.Bedrijf</span>
+                            <div class="meta-text">@slide.Status</div>
+                        </td>
+                        <td class="price-cell">@slide.Prijs</td>
+                        <td>
+                            @if (slide.IsActief)
+                            {
+                                <span class="badge bg-success">Ja</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Nee</span>
+                            }
+                        </td>
+                        <td>@slide.DurationSeconds sec</td>
+                        <td>
+                            <div class="actions-grid">
+                                <form method="post" asp-page-handler="MoveUp" class="d-inline">
+                                    <input type="hidden" name="id" value="@slide.Id" />
+                                    <button type="submit" class="btn btn-sm btn-action-neutral btn-move" disabled="@isFirstSlide">↑</button>
+                                </form>
+                                <form method="post" asp-page-handler="MoveDown" class="d-inline">
+                                    <input type="hidden" name="id" value="@slide.Id" />
+                                    <button type="submit" class="btn btn-sm btn-action-neutral btn-move" disabled="@isLastSlide">↓</button>
+                                </form>
+                                <form method="get" asp-page="./Index" class="d-inline">
+                                    <input type="hidden" name="editId" value="@slide.Id" />
+                                    <button type="submit" class="btn btn-sm btn-action-edit">Bewerk</button>
+                                </form>
+                                <form method="post" asp-page-handler="Deactivate" class="d-inline">
+                                    <input type="hidden" name="id" value="@slide.Id" />
+                                    <button type="submit" class="btn btn-sm btn-action-toggle">Uit</button>
+                                </form>
+                                <button type="button" class="btn btn-sm btn-action-danger" onclick="openDeleteModal(@slide.Id)">Verwijder</button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <div class="mt-4 inactive-section">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+            <h2 class="h6 text-uppercase mb-1 section-count">Inactieve slides</h2>
+            <p class="section-note mb-0">Dit overzicht toont alleen inactieve slides, zodat verborgen items niet uit beeld verdwijnen.</p>
+        </div>
+        <span class="section-count">@inactieve inactieve slide(s)</span>
+    </div>
+
+    @if (!Model.Slides.Any(slide => !slide.IsActief))
+    {
+        <div class="alert surface-empty">Er zijn nog geen inactieve slides gevonden.</div>
+    }
+    else
+    {
+        <div class="table-responsive glass-table-wrap">
+            <table class="table table-sm table-bordered align-middle surface-table table-clean">
+                <thead>
+                <tr>
+                    <th>Volgorde</th>
+                    <th>Soort</th>
+                    <th>Slide</th>
+                    <th>Bedrijf</th>
+                    <th>Prijs</th>
+                    <th>Zichtbaar</th>
+                    <th>Duur</th>
+                    <th>Acties</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var slide in inactieveSlides)
+                {
+                    var isFirstSlide = inactieveSlides.First().Id == slide.Id;
+                    var isLastSlide = inactieveSlides.Last().Id == slide.Id;
+                    <tr>
+                        <td>@slide.Volgorde</td>
+                        <td>
+                            <span class="badge @(slide.Type == "hypotheek" ? "bg-secondary" : "bg-primary")">@slide.Type</span>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">@slide.Titel</div>
+                            <div class="meta-text">@slide.Plaats</div>
+                        </td>
+                        <td>
+                            <span class="fw-semibold">@slide.Bedrijf</span>
+                            <div class="meta-text">@slide.Status</div>
+                        </td>
+                        <td class="price-cell">@slide.Prijs</td>
+                        <td>
+                            @if (slide.IsActief)
+                            {
+                                <span class="badge bg-success">Ja</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Nee</span>
+                            }
+                        </td>
+                        <td>@slide.DurationSeconds sec</td>
+                        <td>
+                            <div class="actions-grid">
+                                <form method="post" asp-page-handler="MoveUp" class="d-inline">
+                                    <input type="hidden" name="id" value="@slide.Id" />
+                                    <button type="submit" class="btn btn-sm btn-action-neutral btn-move" disabled="@isFirstSlide">↑</button>
+                                </form>
+                                <form method="post" asp-page-handler="MoveDown" class="d-inline">
+                                    <input type="hidden" name="id" value="@slide.Id" />
+                                    <button type="submit" class="btn btn-sm btn-action-neutral btn-move" disabled="@isLastSlide">↓</button>
+                                </form>
+                                <form method="get" asp-page="./Index" class="d-inline">
+                                    <input type="hidden" name="editId" value="@slide.Id" />
+                                    <button type="submit" class="btn btn-sm btn-action-edit">Bewerk</button>
+                                </form>
+                                <form method="post" asp-page-handler="Activate" class="d-inline">
+                                    <input type="hidden" name="id" value="@slide.Id" />
+                                    <button type="submit" class="btn btn-sm btn-action-toggle">Aan</button>
+                                </form>
+                                <button type="button" class="btn btn-sm btn-action-danger" onclick="openDeleteModal(@slide.Id)">Verwijder</button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+    </div>
+</div>
+<div id="deleteConfirmOverlay" class="confirm-overlay">
+    <div class="confirm-modal">
+        <div class="confirm-modal-header">Slide verwijderen</div>
+        <div class="confirm-modal-body">
+            Weet je zeker dat je deze slide wilt verwijderen?
+        </div>
+        <div class="confirm-modal-actions">
+            <button type="button" class="btn btn-outline-secondary" onclick="closeDeleteModal()">Annuleren</button>
+            <button type="button" class="btn btn-action-danger" onclick="submitDeleteModal()">Verwijder</button>
+        </div>
+    </div>
+</div>
+
+<form id="deleteSlideForm" method="post" asp-page-handler="Delete" style="display:none;">
+    <input type="hidden" name="id" id="deleteSlideId" />
+</form>
+
+<script>
+    function openDeleteModal(id) {
+        var overlay = document.getElementById('deleteConfirmOverlay');
+        var input = document.getElementById('deleteSlideId');
+
+        if (!overlay || !input) return;
+
+        input.value = id;
+        overlay.style.display = 'flex';
+    }
+
+    function closeDeleteModal() {
+        var overlay = document.getElementById('deleteConfirmOverlay');
+        if (!overlay) return;
+        overlay.style.display = 'none';
+    }
+
+    function submitDeleteModal() {
+        var form = document.getElementById('deleteSlideForm');
+        if (!form) return;
+        form.submit();
+    }
+
+    function createPlaceholderDataUrl(backgroundColor, label) {
+        var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">'
+            + '<rect width="1080" height="1920" fill="' + backgroundColor + '"/>'
+            + '<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" '
+            + 'font-family="Arial, Helvetica, sans-serif" font-size="64" fill="white">' + label + '</text>'
+            + '</svg>';
+
+        return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+    }
+
+    function getPreviewPlaceholder() {
+        var bedrijfSelect = document.getElementById('bedrijfSelect');
+
+        if (!bedrijfSelect || !bedrijfSelect.value) {
+            return createPlaceholderDataUrl('#6c757d', 'Geen afbeelding');
+        }
+
+        if (bedrijfSelect.value === 'Vastgoed Experts') {
+            return createPlaceholderDataUrl('#3cb54a', 'Afbeelding Vastgoed Experts');
+        }
+
+        if (bedrijfSelect.value === 'De Financiële Experts') {
+            return createPlaceholderDataUrl('#1f3a5f', 'Afbeelding hypotheek');
+        }
+
+        return createPlaceholderDataUrl('#7a0030', 'Afbeelding Reliplan');
+    }
+
+    function updateAfbeeldingPreview() {
+        var afbeeldingInput = document.getElementById('afbeeldingInput');
+        var afbeeldingPreview = document.getElementById('afbeeldingPreview');
+
+        if (!afbeeldingInput || !afbeeldingPreview) return;
+
+        var value = (afbeeldingInput.value || '').trim();
+        var fallback = getPreviewPlaceholder();
+
+        if (!value) {
+            afbeeldingPreview.src = fallback;
+            return;
+        }
+
+        afbeeldingPreview.onerror = function () {
+            afbeeldingPreview.onerror = null;
+            afbeeldingPreview.src = fallback;
+        };
+
+        afbeeldingPreview.src = value;
+    }
+
+    function toggleEnergieLabelField() {
+        var bedrijfSelect = document.getElementById('bedrijfSelect');
+        var energieLabelWrapper = document.getElementById('energieLabelWrapper');
+        if (!bedrijfSelect || !energieLabelWrapper) return;
+        energieLabelWrapper.style.display = bedrijfSelect.value === 'Vastgoed Experts' ? '' : 'none';
+    }
+
+    function toggleTypeFields() {
+        var typeSelect = document.getElementById('typeSelect');
+        var bedrijfSelect = document.getElementById('bedrijfSelect');
+        var statusField = document.querySelector('[name="Status"]').closest('.col-md-4');
+        var titelField = document.querySelector('[name="Titel"]').closest('.col-md-6');
+        var plaatsField = document.querySelector('[name="Plaats"]').closest('.col-md-6');
+        var prijsField = document.querySelector('[name="Prijs"]').closest('.col-md-4');
+        var prijsSuffixField = document.querySelector('[name="PrijsSuffix"]').closest('.col-md-4');
+        var energieLabelWrapper = document.getElementById('energieLabelWrapper');
+        var afbeeldingWrapper = document.getElementById('afbeeldingWrapper');
+        var extraWrapper = document.getElementById('extraWrapper');
+
+        if (!typeSelect || !bedrijfSelect) return;
+
+        var isHypotheek = typeSelect.value === 'hypotheek';
+        var dfeOption = bedrijfSelect.querySelector('option[value="De Financiële Experts"]');
+
+        if (dfeOption) {
+            dfeOption.hidden = !isHypotheek;
+            dfeOption.disabled = !isHypotheek;
+        }
+
+        if (isHypotheek) {
+            bedrijfSelect.value = 'De Financiële Experts';
+            bedrijfSelect.disabled = true;
+        } else {
+            bedrijfSelect.disabled = false;
+            if (bedrijfSelect.value === 'De Financiële Experts') {
+                bedrijfSelect.value = '';
+            }
+        }
+
+        if (statusField) statusField.style.display = isHypotheek ? 'none' : '';
+        if (titelField) titelField.style.display = isHypotheek ? 'none' : '';
+        if (plaatsField) plaatsField.style.display = isHypotheek ? 'none' : '';
+        if (prijsField) prijsField.style.display = isHypotheek ? 'none' : '';
+        if (prijsSuffixField) prijsSuffixField.style.display = isHypotheek ? 'none' : '';
+
+        if (energieLabelWrapper) {
+            energieLabelWrapper.style.display = (!isHypotheek && bedrijfSelect.value === 'Vastgoed Experts') ? '' : 'none';
+        }
+
+        if (afbeeldingWrapper) {
+            afbeeldingWrapper.style.display = isHypotheek ? 'none' : '';
+        }
+
+        if (extraWrapper) {
+            extraWrapper.style.display = (!isHypotheek && bedrijfSelect.value === 'Reliplan') ? '' : 'none';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        toggleEnergieLabelField();
+        toggleTypeFields();
+        updateAfbeeldingPreview();
+
+        var bedrijfSelect = document.getElementById('bedrijfSelect');
+        var afbeeldingInput = document.getElementById('afbeeldingInput');
+        var typeSelect = document.getElementById('typeSelect');
+        if (bedrijfSelect) {
+            bedrijfSelect.addEventListener('change', function () {
+                toggleEnergieLabelField();
+                toggleTypeFields();
+                updateAfbeeldingPreview();
+            });
+        }
+        if (typeSelect) {
+            typeSelect.addEventListener('change', function () {
+                toggleTypeFields();
+            });
+        }
+        if (afbeeldingInput) {
+            afbeeldingInput.addEventListener('input', updateAfbeeldingPreview);
+        }
+    });
+</script>
