@@ -1,15 +1,18 @@
 using System.Text.Json;
 using SignageApp.Models;
+using Microsoft.AspNetCore.Hosting;
 
 namespace SignageApp.Services;
 
 public class SlideService
 {
     private readonly string filePath;
+    private readonly IWebHostEnvironment environment;
     private List<Slide> slides;
 
-    public SlideService()
+    public SlideService(IWebHostEnvironment environment)
     {
+        this.environment = environment;
         filePath = ResolveStoragePath();
         slides = LoadSlides();
     }
@@ -51,11 +54,6 @@ public class SlideService
             return false;
         }
 
-        if (IsProtectedRssSlide(slides[index]))
-        {
-            return false;
-        }
-
         slides[index] = CloneSlide(updatedSlide);
         NormalizeOrder();
         SaveSlides();
@@ -67,11 +65,6 @@ public class SlideService
         Slide? slideToRemove = slides.FirstOrDefault(slide => slide.Id == id);
 
         if (slideToRemove == null)
-        {
-            return false;
-        }
-
-        if (IsProtectedRssSlide(slideToRemove))
         {
             return false;
         }
@@ -195,21 +188,17 @@ public class SlideService
 
     private string ResolveStoragePath()
     {
-        string currentDirectoryPath = Path.Combine(Directory.GetCurrentDirectory(), "slides.json");
-        string runtimeDirectoryPath = Path.Combine(AppContext.BaseDirectory, "slides.json");
+        string webRootPath = environment.WebRootPath;
 
-        if (File.Exists(currentDirectoryPath) || File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "index.html")))
+        if (string.IsNullOrWhiteSpace(webRootPath))
         {
-            return currentDirectoryPath;
+            webRootPath = Path.Combine(environment.ContentRootPath, "wwwroot");
         }
 
-        return runtimeDirectoryPath;
-    }
+        string dataDirectory = Path.Combine(webRootPath, "data");
+        Directory.CreateDirectory(dataDirectory);
 
-    private bool IsProtectedRssSlide(Slide slide)
-    {
-        return slide.Type.Trim().ToLower() == "hypotheek"
-               && slide.Bedrijf.Trim().ToLower() == "de financiële experts";
+        return Path.Combine(dataDirectory, "slides.json");
     }
 
     private Slide CloneSlide(Slide slide)
@@ -227,7 +216,8 @@ public class SlideService
             Afbeelding = slide.Afbeelding,
             Extra = slide.Extra,
             IsActief = slide.IsActief,
-            Volgorde = slide.Volgorde
+            Volgorde = slide.Volgorde,
+            DurationSeconds = slide.DurationSeconds
         };
     }
 
@@ -248,7 +238,8 @@ public class SlideService
                 Afbeelding = "https://placehold.co/1080x1350?text=Reliplan+Pand",
                 Extra = "Mooie kantoorruimte op zichtlocatie",
                 IsActief = true,
-                Volgorde = 1
+                Volgorde = 1,
+                DurationSeconds = 10
             },
             new Slide
             {
@@ -263,7 +254,8 @@ public class SlideService
                 Afbeelding = "https://placehold.co/1080x1350?text=Vastgoed+Experts+Pand",
                 Extra = "",
                 IsActief = true,
-                Volgorde = 2
+                Volgorde = 2,
+                DurationSeconds = 10
             },
             new Slide
             {
@@ -278,7 +270,8 @@ public class SlideService
                 Afbeelding = "",
                 Extra = "Actuele hypotheekrentes",
                 IsActief = true,
-                Volgorde = 3
+                Volgorde = 3,
+                DurationSeconds = 18
             }
         };
     }
