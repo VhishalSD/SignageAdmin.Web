@@ -1,0 +1,47 @@
+[
+  {
+    "Id": 4,
+    "Type": "pand",
+    "Bedrijf": "Vastgoed Experts",
+    "Status": "Te koop",
+    "Titel": "Coolsingel 40",
+    "Plaats": "Rotterdam",
+    "Prijs": "\u20AC 325.000",
+    "EnergieLabel": "C",
+    "Afbeelding": "https://images.unsplash.com/photo-1460317442991-0ec209397118",
+    "Extra": "",
+    "IsActief": true,
+    "Volgorde": 1,
+    "DurationSeconds": 1
+  },
+  {
+    "Id": 3,
+    "Type": "hypotheek",
+    "Bedrijf": "De Financi\u00EBle Experts",
+    "Status": "",
+    "Titel": "",
+    "Plaats": "",
+    "Prijs": "",
+    "EnergieLabel": "",
+    "Afbeelding": "",
+    "Extra": "Actuele hypotheekrentes",
+    "IsActief": true,
+    "Volgorde": 2,
+    "DurationSeconds": 3
+  },
+  {
+    "Id": 2,
+    "Type": "pand",
+    "Bedrijf": "Reliplan",
+    "Status": "Te koop",
+    "Titel": "Dorpsstraat 5",
+    "Plaats": "Nieuwerkerk aan den IJssel",
+    "Prijs": "\u20AC 389.000 k.k.",
+    "EnergieLabel": "",
+    "Afbeelding": "dorpsstraat5.jpg",
+    "Extra": "jwehgfhwgfe likugh fugewfh iukghwferiugbi",
+    "IsActief": true,
+    "Volgorde": 3,
+    "DurationSeconds": 3
+  }
+]
