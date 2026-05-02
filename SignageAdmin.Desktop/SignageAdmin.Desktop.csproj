@@ -9,6 +9,7 @@
     <AssemblyName>Signage Beheer</AssemblyName>
     <Product>Signage Beheer</Product>
     <FileDescription>Signage Beheer</FileDescription>
+    <ApplicationIcon>..\Properties\AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
