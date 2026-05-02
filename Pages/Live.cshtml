@@ -56,44 +56,6 @@
     .preview-info-card .text-muted {
         color: #d1d5db !important;
     }
-
-    .office-info-box {
-        background: rgba(15, 15, 18, 0.58);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 0.75rem;
-        padding: 0.9rem 1rem;
-        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18);
-        backdrop-filter: blur(14px) saturate(150%);
-        -webkit-backdrop-filter: blur(14px) saturate(150%);
-    }
-
-    .office-info-box summary {
-        cursor: pointer;
-        color: #f8fafc;
-        font-weight: 700;
-        list-style: none;
-    }
-
-    .office-info-box summary::-webkit-details-marker {
-        display: none;
-    }
-
-    .office-info-box summary::after {
-        content: "▾";
-        float: right;
-        color: #d1d5db;
-    }
-
-    .office-info-box[open] summary::after {
-        content: "▴";
-    }
-
-    .office-info-content {
-        padding-top: 0.85rem;
-        color: #d1d5db;
-        font-weight: 500;
-    }
-    
 </style>
 
 <div class="container py-4">
@@ -104,14 +66,6 @@
         </div>
         <a asp-page="/Index" class="btn btn-secondary">Terug naar beheer</a>
     </div>
-    
-    <details class="office-info-box mb-4">
-        <summary>Belangrijke informatie voor gebruik op kantoor</summary>
-        <div class="office-info-content">
-            <p class="mb-2"><strong>URL op het iiyama-scherm:</strong> open in Chrome <code>http://localhost:8001/Live</code>.</p>
-            <p class="mb-0"><strong>Bediening:</strong> sluit een muis en toetsenbord aan om het scherm en Chrome goed te kunnen bedienen.</p>
-        </div>
-    </details>
 
     <div class="card border-0 shadow-sm mb-4 preview-info-card">
         <div class="card-body">
