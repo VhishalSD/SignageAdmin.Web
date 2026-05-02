@@ -50,7 +50,7 @@ public partial class MainWindow : Window
         );
 
         var publishedWebAppPath = Path.GetFullPath(
-            Path.Combine(AppContext.BaseDirectory, @"..\web\SignageAdmin.Web.exe")
+            Path.Combine(AppContext.BaseDirectory, @"web\SignageAdmin.Web.exe")
         );
 
         var webAppPath = File.Exists(publishedWebAppPath)
