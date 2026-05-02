@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -8,6 +9,7 @@ namespace SignageAdmin.Desktop;
 
 public partial class MainWindow : Window
 {
+    private const string WebAppUrl = "http://localhost:5278";
     private Process? _webProcess;
 
     public MainWindow()
@@ -22,9 +24,23 @@ public partial class MainWindow : Window
     {
         StartWebApp();
 
-        await Task.Delay(3000);
+        var isReady = await WaitForWebAppAsync();
 
-        Browser.Source = new Uri("http://localhost:5278");
+        if (isReady)
+        {
+            Browser.Source = new Uri(WebAppUrl);
+        }
+        else
+        {
+            MessageBox.Show(
+                "De beheerapp kon niet worden gestart. Probeer de app opnieuw te openen.",
+                "Reliplan Signage",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error
+            );
+
+            Close();
+        }
     }
 
     private void StartWebApp()
@@ -42,6 +58,32 @@ public partial class MainWindow : Window
         };
 
         _webProcess = Process.Start(startInfo);
+    }
+
+    private static async Task<bool> WaitForWebAppAsync()
+    {
+        using var client = new HttpClient();
+
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            try
+            {
+                var response = await client.GetAsync(WebAppUrl);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+                // The web app is probably still starting.
+            }
+
+            await Task.Delay(500);
+        }
+
+        return false;
     }
 
     private void MainWindow_Closed(object? sender, EventArgs e)
