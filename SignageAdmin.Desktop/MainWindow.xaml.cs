@@ -60,13 +60,13 @@ public partial class MainWindow : Window
         var webAppDirectory = Path.GetDirectoryName(webAppPath);
 
         var startInfo = new ProcessStartInfo
-        {
-            FileName = webAppPath,
-            Arguments = "--urls http://localhost:5278",
-            WorkingDirectory = webAppDirectory,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
+    {
+        FileName = webAppPath,
+        Arguments = "--urls http://0.0.0.0:5278",
+        WorkingDirectory = webAppDirectory,
+        UseShellExecute = false,
+        CreateNoWindow = true
+    };
 
         _webProcess = Process.Start(startInfo);
     }
