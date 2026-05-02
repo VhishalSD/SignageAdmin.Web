@@ -43,23 +43,25 @@ public partial class MainWindow : Window
         }
     }
 
-    private void StartWebApp()
+private void StartWebApp()
+{
+    var webAppPath = Path.GetFullPath(
+        Path.Combine(AppContext.BaseDirectory, @"..\..\..\..\publish\web\SignageAdmin.Web.exe")
+    );
+
+    var webAppDirectory = Path.GetDirectoryName(webAppPath);
+
+    var startInfo = new ProcessStartInfo
     {
-        var webProjectPath = Path.GetFullPath(
-            Path.Combine(AppContext.BaseDirectory, @"..\..\..\..\SignageAdmin.Web.csproj")
-        );
+        FileName = webAppPath,
+        Arguments = "--urls http://localhost:5278",
+        WorkingDirectory = webAppDirectory,
+        UseShellExecute = false,
+        CreateNoWindow = true
+    };
 
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "dotnet",
-            Arguments = $"run --project \"{webProjectPath}\"",
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-
-        _webProcess = Process.Start(startInfo);
-    }
-
+    _webProcess = Process.Start(startInfo);
+}
     private static async Task<bool> WaitForWebAppAsync()
     {
         using var client = new HttpClient();
