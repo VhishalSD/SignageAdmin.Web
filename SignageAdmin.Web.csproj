@@ -26,11 +26,6 @@
       </Content>
     </ItemGroup>
 
-   <ItemGroup>
-    <PackageReference Include="ElectronNET.Core" Version="0.4.1" />
-    <PackageReference Include="ElectronNET.Core.AspNet" Version="0.4.1" />
-  </ItemGroup>
-
   <ItemGroup>
     <Compile Remove="SignageAdmin.Desktop\**\*.cs" />
     <Content Remove="SignageAdmin.Desktop\**\*" />
