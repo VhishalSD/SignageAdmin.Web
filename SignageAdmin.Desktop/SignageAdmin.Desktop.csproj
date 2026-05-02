@@ -6,6 +6,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <AssemblyName>Signage Beheer</AssemblyName>
+    <Product>Signage Beheer</Product>
+    <FileDescription>Signage Beheer</FileDescription>
   </PropertyGroup>
 
   <ItemGroup>
