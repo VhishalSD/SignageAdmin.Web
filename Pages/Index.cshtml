@@ -1,7 +1,7 @@
 ﻿@page
 @model SignageAdmin.Web.Pages.IndexModel
 @{
-    ViewData["Title"] = "Signage beheer";
+    ViewData["Title"] = "Signage Beheer";
     var totaal = Model.Slides.Count;
     var actieve = Model.SlidesForPreview.Count;
     var panden = Model.SlidesForPreview.Count(slide => slide.Type != "hypotheek");
@@ -356,7 +356,7 @@
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
-            <h1 class="mb-1 admin-page-title">Signage beheer</h1>
+            <h1 class="mb-1 admin-page-title">Signage Beheer</h1>
             <p class="admin-page-subtitle">Beheer hier alle panden en schermen voor de weergave.</p>
         </div>
         <a asp-page="/Live" class="btn btn-dark">Open schermweergave</a>
