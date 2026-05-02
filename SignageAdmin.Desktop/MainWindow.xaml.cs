@@ -43,25 +43,34 @@ public partial class MainWindow : Window
         }
     }
 
-private void StartWebApp()
-{
-    var webAppPath = Path.GetFullPath(
-        Path.Combine(AppContext.BaseDirectory, @"..\..\..\..\publish\web\SignageAdmin.Web.exe")
-    );
-
-    var webAppDirectory = Path.GetDirectoryName(webAppPath);
-
-    var startInfo = new ProcessStartInfo
+    private void StartWebApp()
     {
-        FileName = webAppPath,
-        Arguments = "--urls http://localhost:5278",
-        WorkingDirectory = webAppDirectory,
-        UseShellExecute = false,
-        CreateNoWindow = true
-    };
+        var debugWebAppPath = Path.GetFullPath(
+            Path.Combine(AppContext.BaseDirectory, @"..\..\..\..\publish\web\SignageAdmin.Web.exe")
+        );
 
-    _webProcess = Process.Start(startInfo);
-}
+        var publishedWebAppPath = Path.GetFullPath(
+            Path.Combine(AppContext.BaseDirectory, @"..\web\SignageAdmin.Web.exe")
+        );
+
+        var webAppPath = File.Exists(publishedWebAppPath)
+            ? publishedWebAppPath
+            : debugWebAppPath;
+
+        var webAppDirectory = Path.GetDirectoryName(webAppPath);
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = webAppPath,
+            Arguments = "--urls http://localhost:5278",
+            WorkingDirectory = webAppDirectory,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        _webProcess = Process.Start(startInfo);
+    }
+
     private static async Task<bool> WaitForWebAppAsync()
     {
         using var client = new HttpClient();
