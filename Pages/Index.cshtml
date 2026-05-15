@@ -4,7 +4,7 @@
     ViewData["Title"] = "Signage beheer";
     var totaal = Model.Slides.Count;
     var actieve = Model.SlidesForPreview.Count;
-    var panden = Model.SlidesForPreview.Count(slide => slide.Type != "hypotheek");
+    var panden = Model.SlidesForPreview.Count(slide => slide.Type == "pand");
     var inactieve = Model.Slides.Count(slide => !slide.IsActief);
     var actieveSlides = Model.SlidesForPreview.ToList();
     var inactieveSlides = Model.Slides.Where(slide => !slide.IsActief).ToList();
@@ -425,7 +425,7 @@
                                     <option value="hypotheek" selected="@(Model.Type == "hypotheek")">Hypotheek</option>
                                     <option value="vrije-slide" selected="@(Model.Type == "vrije-slide")">Vrije slide</option>
                                 </select>
-                                <div class="section-note mt-1">Gebruik Pand voor vastgoed, Hypotheek voor De Financiële Experts en Vrije slide voor een losse JPG, JPEG, PNG, GIF of PDF.</div>
+                                <div class="section-note mt-1">Pand is voor Reliplan of Vastgoed Experts. Hypotheek is voor De Financiële Experts. Vrije slide is voor losse bestanden zoals JPG, JPEG, PNG, GIF of PDF.</div>
                                 @if (ViewData.ModelState[nameof(Model.Type)]?.Errors.Count > 0)
                                 {
                                     <div class="text-danger small mt-1">@ViewData.ModelState[nameof(Model.Type)]!.Errors[0].ErrorMessage</div>
@@ -859,12 +859,15 @@
         var dfeOption = bedrijfSelect.querySelector('option[value="De Financiële Experts"]');
 
         if (dfeOption) {
-            dfeOption.hidden = !(isHypotheek || isVrijeSlide);
-            dfeOption.disabled = !(isHypotheek || isVrijeSlide);
+            dfeOption.hidden = !isHypotheek;
+            dfeOption.disabled = !isHypotheek;
         }
 
-        if (isHypotheek || isVrijeSlide) {
+        if (isHypotheek) {
             bedrijfSelect.value = 'De Financiële Experts';
+            bedrijfSelect.disabled = true;
+        } else if (isVrijeSlide) {
+            bedrijfSelect.value = '';
             bedrijfSelect.disabled = true;
         } else {
             bedrijfSelect.disabled = false;

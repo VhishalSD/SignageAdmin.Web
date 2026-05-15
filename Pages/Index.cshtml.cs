@@ -113,9 +113,11 @@ public class IndexModel : PageModel
         }
 
         string finalType = string.IsNullOrWhiteSpace(Type) ? "pand" : Type;
-        string finalBedrijf = finalType is "hypotheek" or "vrije-slide"
+        string finalBedrijf = finalType == "hypotheek"
             ? "De Financiële Experts"
-            : (Bedrijf ?? "");
+            : finalType == "vrije-slide"
+                ? ""
+                : (Bedrijf ?? "");
         string finalAfbeelding = SaveVrijeSlideUploadIfNeeded(finalType);
 
         if (IsEditMode)
@@ -133,7 +135,7 @@ public class IndexModel : PageModel
                 Type = finalType,
                 Bedrijf = finalBedrijf,
                 Status = finalType == "pand" ? (Status ?? "") : "",
-                Titel = finalType == "pand" ? (Titel ?? "") : "",
+                Titel = finalType is "pand" or "vrije-slide" ? (Titel ?? "") : "",
                 Plaats = finalType == "pand" ? (Plaats ?? "") : "",
                 Prijs = finalType == "pand" ? BuildPrice(Prijs, PrijsSuffix) : "",
                 EnergieLabel = finalBedrijf == "Vastgoed Experts" ? (EnergieLabel ?? "") : "",
@@ -155,7 +157,7 @@ public class IndexModel : PageModel
             Type = finalType,
             Bedrijf = finalBedrijf,
             Status = finalType == "pand" ? (Status ?? "") : "",
-            Titel = finalType == "pand" ? (Titel ?? "") : "",
+            Titel = finalType is "pand" or "vrije-slide" ? (Titel ?? "") : "",
             Plaats = finalType == "pand" ? (Plaats ?? "") : "",
             Prijs = finalType == "pand" ? BuildPrice(Prijs, PrijsSuffix) : "",
             EnergieLabel = finalBedrijf == "Vastgoed Experts" ? (EnergieLabel ?? "") : "",
@@ -278,7 +280,7 @@ public class IndexModel : PageModel
             }
             if (Bedrijf == "De Financiële Experts")
             {
-                ModelState.AddModelError(nameof(Bedrijf), "De Financiële Experts is alleen bedoeld voor hypotheekslides en vrije slides.");
+                ModelState.AddModelError(nameof(Bedrijf), "De Financiële Experts is alleen bedoeld voor hypotheekslides.");
             }
 
             if (string.IsNullOrWhiteSpace(Status))

@@ -807,10 +807,8 @@
                      alt="dé Financiële Experts">
             </div>
 
-            <div class="maintenance-title" id="maintenance-title">Beheer is tijdelijk in gebruik</div>
-            <div class="maintenance-text" id="maintenance-text">
-                De schermweergave wordt zo weer automatisch hervat.
-            </div>
+            <div class="maintenance-title" id="maintenance-title">Welkom bij</div>
+            <div class="maintenance-text" id="maintenance-text"></div>
             <div class="maintenance-line"></div>
         </div>
     </div>
@@ -933,8 +931,8 @@
 
         if (type === "maintenance" || type === "bezet" || type === "under-maintenance") {
             tplMaintenance.style.display = "flex";
-            document.getElementById('maintenance-title').textContent = item.titel || "Beheer is tijdelijk in gebruik";
-            document.getElementById('maintenance-text').textContent = item.extra || "De schermweergave wordt zo weer automatisch hervat.";
+            document.getElementById('maintenance-title').textContent = item.titel || "Welkom bij";
+            document.getElementById('maintenance-text').textContent = item.extra || "";
             return;
         }
 
