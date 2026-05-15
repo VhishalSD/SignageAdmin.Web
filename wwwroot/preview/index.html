@@ -493,6 +493,126 @@
             max-height: 100%;
             object-fit: contain;
         }
+
+        /* ════════════════════════════════════════════
+           MAINTENANCE / BEZET SLIDE
+        ════════════════════════════════════════════ */
+        #tpl-maintenance {
+            display: none;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #ffffff 0%, #f7f7f7 100%);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 110px 90px;
+            font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+        }
+
+        .maintenance-card {
+            width: 100%;
+            border: 3px solid #e8e8e8;
+            border-radius: 42px;
+            padding: 90px 70px;
+            background: rgba(255,255,255,0.92);
+            box-shadow: 0 24px 80px rgba(0,0,0,0.08);
+        }
+
+        .maintenance-logos {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 52px;
+            margin-bottom: 95px;
+        }
+
+        .maintenance-reliplan-logo {
+            max-width: 520px;
+            max-height: 170px;
+            object-fit: contain;
+        }
+
+        .maintenance-financiele-logo {
+            max-width: 560px;
+            max-height: 150px;
+            object-fit: contain;
+        }
+
+        .maintenance-vge-logo {
+            max-width: 620px;
+            max-height: 150px;
+            object-fit: contain;
+        }
+
+        .maintenance-title {
+            font-size: 56px;
+            font-weight: 900;
+            color: #2b2b2b;
+            line-height: 1.18;
+            margin-bottom: 28px;
+        }
+
+        .maintenance-text {
+            font-size: 30px;
+            font-weight: 500;
+            color: #666;
+            line-height: 1.55;
+            max-width: 760px;
+            margin: 0 auto;
+        }
+
+        .maintenance-line {
+            width: 180px;
+            height: 8px;
+            margin: 58px auto 0;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #7a0030 0%, #3cb54a 100%);
+        }
+
+        /* ════════════════════════════════════════════
+           VRIJE SLIDE / UPLOADBARE CONTENT
+        ════════════════════════════════════════════ */
+        #tpl-vrije-slide {
+            display: none;
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .free-slide-media {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+        }
+
+        .free-slide-media img,
+        .free-slide-media iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            display: block;
+            background: #ffffff;
+        }
+
+        .free-slide-media img {
+            object-fit: contain;
+        }
+
+        .free-slide-error {
+            padding: 80px;
+            text-align: center;
+            font-size: 38px;
+            font-weight: 700;
+            line-height: 1.4;
+            color: #444;
+        }
     </style>
 
 </head>
@@ -670,6 +790,35 @@
     </div>
 
 
+    <!-- ══ MAINTENANCE / BEZET SLIDE ══ -->
+    <div id="tpl-maintenance">
+        <div class="maintenance-card">
+            <div class="maintenance-logos">
+                <img class="maintenance-reliplan-logo"
+                     src="https://www.reliplan.nl/img/logo-Reliplan.png"
+                     alt="Reliplan">
+
+                <img class="maintenance-vge-logo"
+                     src="https://www.devastgoedexperts.nl/Content/Images/logo.svg"
+                     alt="dé Vastgoed Experts">
+
+                <img class="maintenance-financiele-logo"
+                     src="https://definancieleexperts.nl/media/cache/logo_breed/media/licentie/427/De_financiele_experts.jpg"
+                     alt="dé Financiële Experts">
+            </div>
+
+            <div class="maintenance-title" id="maintenance-title">Beheer is tijdelijk in gebruik</div>
+            <div class="maintenance-text" id="maintenance-text">
+                De schermweergave wordt zo weer automatisch hervat.
+            </div>
+            <div class="maintenance-line"></div>
+        </div>
+    </div>
+
+    <!-- ══ VRIJE SLIDE / UPLOADBARE CONTENT ══ -->
+    <div id="tpl-vrije-slide">
+        <div class="free-slide-media" id="free-slide-media"></div>
+    </div>
 </div>
 <script>
     function createPlaceholderDataUrl(backgroundColor, label) {
@@ -733,7 +882,9 @@
                     extra: ((item.Extra || item.extra || "") + "").trim(),
                     isActief: (typeof item.IsActief !== "undefined") ? item.IsActief : item.isActief,
                     volgorde: parseInt(item.Volgorde || item.volgorde || 0, 10),
-                    durationSeconds: parseInt(item.DurationSeconds || item.durationSeconds || 10, 10)
+                    durationSeconds: parseInt(item.DurationSeconds || item.durationSeconds || 10, 10),
+                    bestandstype: ((item.Bestandstype || item.bestandstype || item.FileType || item.fileType || "") + "").trim(),
+                    uploadUrl: ((item.UploadUrl || item.uploadUrl || item.BestandUrl || item.bestandUrl || "") + "").trim()
                 };
             });
     }
@@ -761,18 +912,35 @@
     }
 
     function renderSlide(item) {
-        var tplRp  = document.getElementById('tpl-reliplan');
-        var tplVge = document.getElementById('tpl-vge');
-        var tplHyp = document.getElementById('tpl-hypotheek');
+        var tplRp          = document.getElementById('tpl-reliplan');
+        var tplVge         = document.getElementById('tpl-vge');
+        var tplHyp         = document.getElementById('tpl-hypotheek');
+        var tplMaintenance = document.getElementById('tpl-maintenance');
+        var tplVrijeSlide  = document.getElementById('tpl-vrije-slide');
         var type    = (item.type    || "pand").trim().toLowerCase();
         var bedrijf = (item.bedrijf || "").trim().toLowerCase();
 
-        tplRp.style.display  = "none";
-        tplVge.style.display = "none";
-        tplHyp.style.display = "none";
+        tplRp.style.display          = "none";
+        tplVge.style.display         = "none";
+        tplHyp.style.display         = "none";
+        tplMaintenance.style.display = "none";
+        tplVrijeSlide.style.display  = "none";
 
         if (type === "hypotheek") {
             tplHyp.style.display = "flex";
+            return;
+        }
+
+        if (type === "maintenance" || type === "bezet" || type === "under-maintenance") {
+            tplMaintenance.style.display = "flex";
+            document.getElementById('maintenance-title').textContent = item.titel || "Beheer is tijdelijk in gebruik";
+            document.getElementById('maintenance-text').textContent = item.extra || "De schermweergave wordt zo weer automatisch hervat.";
+            return;
+        }
+
+        if (type === "vrije-slide" || type === "vrije slide" || type === "free-slide" || type === "upload") {
+            tplVrijeSlide.style.display = "flex";
+            renderFreeSlide(item);
             return;
         }
 
@@ -813,6 +981,41 @@
         document.getElementById('rp-desc').textContent     = item.extra  || "";
 
         fadeImage(document.getElementById('rp-image'), item.afbeelding || "", RELIPLAN_PLACEHOLDER);
+    }
+
+    function renderFreeSlide(item) {
+        var mediaEl = document.getElementById('free-slide-media');
+        if (!mediaEl) return;
+
+        mediaEl.innerHTML = "";
+
+        var src = (item.uploadUrl || item.afbeelding || "").trim();
+        if (!src) {
+            mediaEl.innerHTML = '<div class="free-slide-error">Geen bestand gekoppeld aan deze vrije slide.</div>';
+            return;
+        }
+
+        if (isPdfFile(src, item.bestandstype)) {
+            var iframe = document.createElement('iframe');
+            iframe.src = src;
+            iframe.title = item.titel || "Vrije slide";
+            mediaEl.appendChild(iframe);
+            return;
+        }
+
+        var img = document.createElement('img');
+        img.src = src;
+        img.alt = item.titel || "Vrije slide";
+        img.onerror = function() {
+            mediaEl.innerHTML = '<div class="free-slide-error">Het gekoppelde bestand kon niet worden geladen.</div>';
+        };
+        mediaEl.appendChild(img);
+    }
+
+    function isPdfFile(src, bestandstype) {
+        var type = (bestandstype || "").toLowerCase();
+        var cleanSrc = (src || "").split('?')[0].split('#')[0].toLowerCase();
+        return type.indexOf("pdf") !== -1 || cleanSrc.endsWith(".pdf");
     }
 
     function fadeImage(imgEl, src, fallbackSrc) {
