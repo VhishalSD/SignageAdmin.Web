@@ -3,12 +3,17 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using SignageApp.Models;
 using SignageApp.Services;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using System.IO;
+using System;
 
 namespace SignageAdmin.Web.Pages;
 
 public class IndexModel : PageModel
 {
     private readonly SlideService slideService;
+    private readonly IWebHostEnvironment environment;
 
     public List<Slide> Slides { get; private set; } = new();
     public List<Slide> SlidesForPreview { get; private set; } = new();
@@ -50,6 +55,9 @@ public class IndexModel : PageModel
     public string? Extra { get; set; }
 
     [BindProperty]
+    public IFormFile? VrijeSlideUpload { get; set; }
+
+    [BindProperty]
     public bool IsActief { get; set; } = true;
 
     [BindProperty]
@@ -57,9 +65,10 @@ public class IndexModel : PageModel
 
     public bool IsEditMode => EditId.HasValue && EditId.Value > 0;
 
-    public IndexModel(SlideService slideService)
+    public IndexModel(SlideService slideService, IWebHostEnvironment environment)
     {
         this.slideService = slideService;
+        this.environment = environment;
     }
 
     public void OnGet(int? editId)
@@ -104,9 +113,10 @@ public class IndexModel : PageModel
         }
 
         string finalType = string.IsNullOrWhiteSpace(Type) ? "pand" : Type;
-        string finalBedrijf = finalType == "hypotheek"
+        string finalBedrijf = finalType is "hypotheek" or "vrije-slide"
             ? "De Financiële Experts"
             : (Bedrijf ?? "");
+        string finalAfbeelding = SaveVrijeSlideUploadIfNeeded(finalType);
 
         if (IsEditMode)
         {
@@ -127,8 +137,8 @@ public class IndexModel : PageModel
                 Plaats = finalType == "pand" ? (Plaats ?? "") : "",
                 Prijs = finalType == "pand" ? BuildPrice(Prijs, PrijsSuffix) : "",
                 EnergieLabel = finalBedrijf == "Vastgoed Experts" ? (EnergieLabel ?? "") : "",
-                Afbeelding = finalType == "hypotheek" ? "" : (Afbeelding ?? ""),
-                Extra = finalType == "pand" && finalBedrijf == "Reliplan" ? (Extra ?? "") : "",
+                Afbeelding = finalType == "hypotheek" ? "" : finalAfbeelding,
+                Extra = finalType == "pand" && finalBedrijf == "Reliplan" ? (Extra ?? "") : finalType == "vrije-slide" ? (Extra ?? "") : "",
                 IsActief = IsActief,
                 Volgorde = existingSlide.Volgorde,
                 DurationSeconds = DurationSeconds
@@ -149,8 +159,8 @@ public class IndexModel : PageModel
             Plaats = finalType == "pand" ? (Plaats ?? "") : "",
             Prijs = finalType == "pand" ? BuildPrice(Prijs, PrijsSuffix) : "",
             EnergieLabel = finalBedrijf == "Vastgoed Experts" ? (EnergieLabel ?? "") : "",
-            Afbeelding = finalType == "hypotheek" ? "" : (Afbeelding ?? ""),
-            Extra = finalType == "pand" && finalBedrijf == "Reliplan" ? (Extra ?? "") : "",
+            Afbeelding = finalType == "hypotheek" ? "" : finalAfbeelding,
+            Extra = finalType == "pand" && finalBedrijf == "Reliplan" ? (Extra ?? "") : finalType == "vrije-slide" ? (Extra ?? "") : "",
             IsActief = IsActief,
             Volgorde = slideService.GetSlides().Count + 1,
             DurationSeconds = DurationSeconds
@@ -268,7 +278,7 @@ public class IndexModel : PageModel
             }
             if (Bedrijf == "De Financiële Experts")
             {
-                ModelState.AddModelError(nameof(Bedrijf), "De Financiële Experts is alleen bedoeld voor hypotheekslides.");
+                ModelState.AddModelError(nameof(Bedrijf), "De Financiële Experts is alleen bedoeld voor hypotheekslides en vrije slides.");
             }
 
             if (string.IsNullOrWhiteSpace(Status))
@@ -292,20 +302,64 @@ public class IndexModel : PageModel
             }
         }
 
+        if (Type == "vrije-slide")
+        {
+            bool hasExistingFilePath = !string.IsNullOrWhiteSpace(Afbeelding);
+            bool hasNewUpload = VrijeSlideUpload is { Length: > 0 };
+
+            if (!hasExistingFilePath && !hasNewUpload)
+            {
+                ModelState.AddModelError(nameof(Afbeelding), "Upload een JPG, JPEG, PNG, GIF of PDF voor deze vrije slide.");
+            }
+
+            if (hasNewUpload && !IsAllowedFreeSlideUpload(VrijeSlideUpload!))
+            {
+                ModelState.AddModelError(nameof(VrijeSlideUpload), "Alleen JPG, JPEG, PNG, GIF en PDF zijn toegestaan.");
+            }
+        }
+
         if (DurationSeconds < 1)
         {
             ModelState.AddModelError(nameof(DurationSeconds), "De duur moet minimaal 1 seconde zijn.");
         }
 
-        if (!string.IsNullOrWhiteSpace(Afbeelding) && !IsValidImageInput(Afbeelding))
+        if (!string.IsNullOrWhiteSpace(Afbeelding) && !IsValidMediaInput(Afbeelding))
         {
-            ModelState.AddModelError(nameof(Afbeelding), "Vul een geldige afbeeldingslink of bestandsnaam in.");
+            ModelState.AddModelError(nameof(Afbeelding), "Vul een geldige afbeeldingslink, bestandsnaam of PDF-pad in.");
         }
 
         return ModelState.IsValid;
     }
 
-    private bool IsValidImageInput(string? input)
+    private string SaveVrijeSlideUploadIfNeeded(string finalType)
+    {
+        if (finalType != "vrije-slide" || VrijeSlideUpload is not { Length: > 0 })
+        {
+            return Afbeelding ?? "";
+        }
+
+        string uploadsFolder = Path.Combine(environment.WebRootPath, "uploads");
+        Directory.CreateDirectory(uploadsFolder);
+
+        string extension = Path.GetExtension(VrijeSlideUpload.FileName).ToLowerInvariant();
+        string safeFileName = $"vrije-slide-{DateTime.Now:yyyyMMddHHmmss}-{Guid.NewGuid():N}{extension}";
+        string filePath = Path.Combine(uploadsFolder, safeFileName);
+
+        using FileStream stream = new(filePath, FileMode.Create);
+        VrijeSlideUpload.CopyTo(stream);
+
+        return $"/uploads/{safeFileName}";
+    }
+
+    private bool IsAllowedFreeSlideUpload(IFormFile file)
+    {
+        string extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        string[] allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".pdf" };
+
+        return allowedExtensions.Contains(extension);
+    }
+
+    private bool IsValidMediaInput(string? input)
     {
         string value = (input ?? "").Trim();
 

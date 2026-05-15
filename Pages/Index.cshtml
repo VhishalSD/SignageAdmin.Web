@@ -396,7 +396,7 @@
             }
         </div>
         <div class="card-body admin-form">
-            <form method="post">
+            <form method="post" enctype="multipart/form-data">
                 <input type="hidden" name="EditId" value="@Model.EditId" />
                 <p class="section-note mb-3">Voeg hier een nieuwe slide toe of werk een bestaande slide bij. De velden zijn hieronder opgesplitst per onderdeel.</p>
 
@@ -423,8 +423,9 @@
                                 <select id="typeSelect" name="Type" class="form-select">
                                     <option value="pand" selected="@(Model.Type == "pand")">Pand</option>
                                     <option value="hypotheek" selected="@(Model.Type == "hypotheek")">Hypotheek</option>
+                                    <option value="vrije-slide" selected="@(Model.Type == "vrije-slide")">Vrije slide</option>
                                 </select>
-                                <div class="section-note mt-1">Bij hypotheek wordt het bedrijf automatisch op De Financiële Experts gezet. Bij een pand is die keuze niet beschikbaar.</div>
+                                <div class="section-note mt-1">Gebruik Pand voor vastgoed, Hypotheek voor De Financiële Experts en Vrije slide voor een losse JPG, JPEG, PNG, GIF of PDF.</div>
                                 @if (ViewData.ModelState[nameof(Model.Type)]?.Errors.Count > 0)
                                 {
                                     <div class="text-danger small mt-1">@ViewData.ModelState[nameof(Model.Type)]!.Errors[0].ErrorMessage</div>
@@ -518,12 +519,18 @@
                                 <div class="form-section-title">Media</div>
                             </div>
                             <div class="col-12" id="afbeeldingWrapper">
-                                <label class="form-label">Afbeelding</label>
-                                <input id="afbeeldingInput" name="Afbeelding" class="form-control" value="@Model.Afbeelding" placeholder="Afbeeldingslink of bestandsnaam" />
+                                <label class="form-label">Afbeelding / bestand</label>
+                                <input id="afbeeldingInput" name="Afbeelding" class="form-control" value="@Model.Afbeelding" placeholder="Afbeeldingslink, bestandsnaam of upload-pad" />
+                                <div class="section-note mt-1">Voor panden gebruik je meestal een afbeeldingslink. Voor vrije slides kan hier ook een eerder opgeslagen upload-pad staan.</div>
                                 @if (ViewData.ModelState[nameof(Model.Afbeelding)]?.Errors.Count > 0)
                                 {
                                     <div class="text-danger small mt-1">@ViewData.ModelState[nameof(Model.Afbeelding)]!.Errors[0].ErrorMessage</div>
                                 }
+                            </div>
+                            <div class="col-12" id="vrijeSlideUploadWrapper">
+                                <label class="form-label">Vrije slide uploaden</label>
+                                <input id="vrijeSlideUploadInput" name="VrijeSlideUpload" type="file" class="form-control" accept=".jpg,.jpeg,.png,.gif,.pdf,image/jpeg,image/png,image/gif,application/pdf" />
+                                <div class="section-note mt-1">Geschikt voor losse content zoals een nieuwsbrief, flyer of mededeling. Ondersteund: JPG, JPEG, PNG, GIF en PDF.</div>
                             </div>
                             <div class="col-12" id="extraWrapper">
                                 <label class="form-label">Extra tekst</label>
@@ -812,6 +819,11 @@
             return;
         }
 
+        if (value.toLowerCase().split('?')[0].split('#')[0].endsWith('.pdf')) {
+            afbeeldingPreview.src = createPlaceholderDataUrl('#334155', 'PDF vrije slide');
+            return;
+        }
+
         afbeeldingPreview.onerror = function () {
             afbeeldingPreview.onerror = null;
             afbeeldingPreview.src = fallback;
@@ -837,19 +849,21 @@
         var prijsSuffixField = document.querySelector('[name="PrijsSuffix"]').closest('.col-md-4');
         var energieLabelWrapper = document.getElementById('energieLabelWrapper');
         var afbeeldingWrapper = document.getElementById('afbeeldingWrapper');
+        var vrijeSlideUploadWrapper = document.getElementById('vrijeSlideUploadWrapper');
         var extraWrapper = document.getElementById('extraWrapper');
 
         if (!typeSelect || !bedrijfSelect) return;
 
         var isHypotheek = typeSelect.value === 'hypotheek';
+        var isVrijeSlide = typeSelect.value === 'vrije-slide';
         var dfeOption = bedrijfSelect.querySelector('option[value="De Financiële Experts"]');
 
         if (dfeOption) {
-            dfeOption.hidden = !isHypotheek;
-            dfeOption.disabled = !isHypotheek;
+            dfeOption.hidden = !(isHypotheek || isVrijeSlide);
+            dfeOption.disabled = !(isHypotheek || isVrijeSlide);
         }
 
-        if (isHypotheek) {
+        if (isHypotheek || isVrijeSlide) {
             bedrijfSelect.value = 'De Financiële Experts';
             bedrijfSelect.disabled = true;
         } else {
@@ -859,22 +873,26 @@
             }
         }
 
-        if (statusField) statusField.style.display = isHypotheek ? 'none' : '';
+        if (statusField) statusField.style.display = (isHypotheek || isVrijeSlide) ? 'none' : '';
         if (titelField) titelField.style.display = isHypotheek ? 'none' : '';
-        if (plaatsField) plaatsField.style.display = isHypotheek ? 'none' : '';
-        if (prijsField) prijsField.style.display = isHypotheek ? 'none' : '';
-        if (prijsSuffixField) prijsSuffixField.style.display = isHypotheek ? 'none' : '';
+        if (plaatsField) plaatsField.style.display = (isHypotheek || isVrijeSlide) ? 'none' : '';
+        if (prijsField) prijsField.style.display = (isHypotheek || isVrijeSlide) ? 'none' : '';
+        if (prijsSuffixField) prijsSuffixField.style.display = (isHypotheek || isVrijeSlide) ? 'none' : '';
 
         if (energieLabelWrapper) {
-            energieLabelWrapper.style.display = (!isHypotheek && bedrijfSelect.value === 'Vastgoed Experts') ? '' : 'none';
+            energieLabelWrapper.style.display = (!isHypotheek && !isVrijeSlide && bedrijfSelect.value === 'Vastgoed Experts') ? '' : 'none';
         }
 
         if (afbeeldingWrapper) {
             afbeeldingWrapper.style.display = isHypotheek ? 'none' : '';
         }
 
+        if (vrijeSlideUploadWrapper) {
+            vrijeSlideUploadWrapper.style.display = isVrijeSlide ? '' : 'none';
+        }
+
         if (extraWrapper) {
-            extraWrapper.style.display = (!isHypotheek && bedrijfSelect.value === 'Reliplan') ? '' : 'none';
+            extraWrapper.style.display = (!isHypotheek && !isVrijeSlide && bedrijfSelect.value === 'Reliplan') ? '' : 'none';
         }
     }
 
