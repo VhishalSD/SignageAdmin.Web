@@ -30,6 +30,10 @@ builder.UseElectron(args, async () =>
 
 var app = builder.Build();
 
+var adminLock = new object();
+var adminLastSeen = DateTimeOffset.MinValue;
+var adminTimeout = TimeSpan.FromSeconds(20);
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
@@ -39,4 +43,34 @@ if (!app.Environment.IsDevelopment())
 app.UseStaticFiles();
 app.UseRouting();
 app.MapRazorPages();
+
+app.MapGet("/api/admin/status", () =>
+{
+    lock (adminLock)
+    {
+        bool isActive = DateTimeOffset.UtcNow - adminLastSeen < adminTimeout;
+        return Results.Json(new { isActive });
+    }
+});
+
+app.MapPost("/api/admin/ping", () =>
+{
+    lock (adminLock)
+    {
+        adminLastSeen = DateTimeOffset.UtcNow;
+    }
+
+    return Results.Ok();
+});
+
+app.MapPost("/api/admin/clear", () =>
+{
+    lock (adminLock)
+    {
+        adminLastSeen = DateTimeOffset.MinValue;
+    }
+
+    return Results.Ok();
+});
+
 app.Run();

@@ -899,7 +899,27 @@
         }
     }
 
+    function pingAdminStatus() {
+        fetch('/api/admin/ping', { method: 'POST', keepalive: true })
+            .catch(function () {
+                // If the ping fails, the preview will automatically return to the normal slides after the timeout.
+            });
+    }
+
+    function clearAdminStatus() {
+        fetch('/api/admin/clear', { method: 'POST', keepalive: true })
+            .catch(function () {
+                // No user action is needed if clearing fails; the timeout still clears the active status.
+            });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
+        pingAdminStatus();
+        setInterval(pingAdminStatus, 5000);
+
+        window.addEventListener('pagehide', clearAdminStatus);
+        window.addEventListener('beforeunload', clearAdminStatus);
+
         toggleEnergieLabelField();
         toggleTypeFields();
         updateAfbeeldingPreview();

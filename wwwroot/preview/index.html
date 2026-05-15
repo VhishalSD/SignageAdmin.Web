@@ -838,6 +838,7 @@
 
     var currentIndex = 0;
     var properties   = [];
+    var adminIsActive = false;
 
     function showPlayerMessage(message) {
         var messageEl = document.getElementById('player-message');
@@ -852,6 +853,40 @@
         if (messageEl) {
             messageEl.style.display = 'none';
         }
+    }
+
+
+    function showMaintenanceScreen() {
+        hidePlayerMessage();
+        renderSlide({
+            type: "maintenance",
+            titel: "Welkom bij",
+            extra: ""
+        });
+    }
+
+    function checkAdminStatus() {
+        fetch('/api/admin/status?v=' + Date.now())
+            .then(function(response) {
+                if (!response.ok) { throw new Error("Admin status kon niet worden geladen."); }
+                return response.json();
+            })
+            .then(function(status) {
+                var wasActive = adminIsActive;
+                adminIsActive = status && status.isActive === true;
+
+                if (adminIsActive) {
+                    showMaintenanceScreen();
+                    return;
+                }
+
+                if (wasActive && properties.length) {
+                    renderSlide(properties[currentIndex]);
+                }
+            })
+            .catch(function() {
+                adminIsActive = false;
+            });
     }
 
 
@@ -1082,15 +1117,22 @@
         if (!properties.length) return;
 
         hidePlayerMessage();
-        renderSlide(properties[currentIndex]);
+        checkAdminStatus();
+
+        if (!adminIsActive) {
+            renderSlide(properties[currentIndex]);
+        }
 
         function nextSlide() {
             var currentItem = properties[currentIndex];
             var delay = getSlideDuration(currentItem);
 
             setTimeout(function() {
-                currentIndex = (currentIndex + 1) % properties.length;
-                renderSlide(properties[currentIndex]);
+                if (!adminIsActive) {
+                    currentIndex = (currentIndex + 1) % properties.length;
+                    renderSlide(properties[currentIndex]);
+                }
+
                 nextSlide();
             }, delay);
         }
@@ -1160,6 +1202,8 @@
         document.getElementById('vge-weather').textContent = msg;
     }
 
+    checkAdminStatus();
+    setInterval(checkAdminStatus, 3000);
     updateWeather();
     setInterval(updateWeather, 1800000);
 
