@@ -3,30 +3,37 @@ using ElectronNET.API;
 using ElectronNET.API.Entities;
 using SignageApp.Services;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = Directory.GetCurrentDirectory()
+});
 
 builder.Services.AddRazorPages();
 builder.Services.AddSingleton<SlideService>();
 builder.Services.AddElectron();
 
-builder.UseElectron(args, async () =>
+if (HybridSupport.IsElectronActive)
 {
-    var options = new BrowserWindowOptions
+    builder.UseElectron(args, async () =>
     {
-        Show = false,
-        Width = 1600,
-        Height = 1000
-    };
+        var options = new BrowserWindowOptions
+        {
+            Show = false,
+            Width = 1600,
+            Height = 1000
+        };
 
-    if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux())
-    {
-        options.AutoHideMenuBar = true;
-    }
+        if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux())
+        {
+            options.AutoHideMenuBar = true;
+        }
 
-    var browserWindow = await Electron.WindowManager.CreateWindowAsync(options);
-    browserWindow.OnReadyToShow += () => browserWindow.Show();
-    browserWindow.OnClosed += () => Electron.App.Quit();
-});
+        var browserWindow = await Electron.WindowManager.CreateWindowAsync(options);
+        browserWindow.OnReadyToShow += () => browserWindow.Show();
+        browserWindow.OnClosed += () => Electron.App.Quit();
+    });
+}
 
 var app = builder.Build();
 
@@ -41,8 +48,11 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseStaticFiles();
+app.MapStaticAssets();
+
 app.UseRouting();
-app.MapRazorPages();
+app.MapRazorPages()
+    .WithStaticAssets();
 
 app.MapGet("/api/admin/status", () =>
 {

@@ -431,7 +431,7 @@
                                     <div class="text-danger small mt-1">@ViewData.ModelState[nameof(Model.Type)]!.Errors[0].ErrorMessage</div>
                                 }
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4" id="bedrijfWrapper">
                                 <label class="form-label">Bedrijf</label>
                                 <select id="bedrijfSelect" name="Bedrijf" class="form-select">
                                     <option value="">Kies een bedrijf</option>
@@ -479,8 +479,8 @@
                                 <div class="form-section-title">Slide-inhoud</div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Titel / adres</label>
-                                <input name="Titel" class="form-control" value="@Model.Titel" placeholder="Bijvoorbeeld: Kerklaan 12" />
+                                <label id="titelLabel" class="form-label">Titel / adres</label>
+                                <input id="titelInput" name="Titel" class="form-control" value="@Model.Titel" placeholder="Bijvoorbeeld: Kerklaan 12" />
                                 @if (ViewData.ModelState[nameof(Model.Titel)]?.Errors.Count > 0)
                                 {
                                     <div class="text-danger small mt-1">@ViewData.ModelState[nameof(Model.Titel)]!.Errors[0].ErrorMessage</div>
@@ -842,6 +842,9 @@
     function toggleTypeFields() {
         var typeSelect = document.getElementById('typeSelect');
         var bedrijfSelect = document.getElementById('bedrijfSelect');
+        var bedrijfWrapper = document.getElementById('bedrijfWrapper');
+        var titelLabel = document.getElementById('titelLabel');
+        var titelInput = document.getElementById('titelInput');
         var statusField = document.querySelector('[name="Status"]').closest('.col-md-4');
         var titelField = document.querySelector('[name="Titel"]').closest('.col-md-6');
         var plaatsField = document.querySelector('[name="Plaats"]').closest('.col-md-6');
@@ -876,8 +879,19 @@
             }
         }
 
+        if (bedrijfWrapper) bedrijfWrapper.style.display = isVrijeSlide ? 'none' : '';
         if (statusField) statusField.style.display = (isHypotheek || isVrijeSlide) ? 'none' : '';
+
         if (titelField) titelField.style.display = isHypotheek ? 'none' : '';
+
+        if (titelLabel) {
+            titelLabel.textContent = isVrijeSlide ? 'Naam / titel slide' : 'Titel / adres';
+        }
+
+        if (titelInput) {
+            titelInput.placeholder = isVrijeSlide ? 'Bijvoorbeeld: Nieuwsbrief mei' : 'Bijvoorbeeld: Kerklaan 12';
+        }
+
         if (plaatsField) plaatsField.style.display = (isHypotheek || isVrijeSlide) ? 'none' : '';
         if (prijsField) prijsField.style.display = (isHypotheek || isVrijeSlide) ? 'none' : '';
         if (prijsSuffixField) prijsSuffixField.style.display = (isHypotheek || isVrijeSlide) ? 'none' : '';
@@ -887,7 +901,7 @@
         }
 
         if (afbeeldingWrapper) {
-            afbeeldingWrapper.style.display = isHypotheek ? 'none' : '';
+            afbeeldingWrapper.style.display = (isHypotheek || isVrijeSlide) ? 'none' : '';
         }
 
         if (vrijeSlideUploadWrapper) {
