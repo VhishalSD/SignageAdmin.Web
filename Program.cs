@@ -13,27 +13,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddSingleton<SlideService>();
 builder.Services.AddElectron();
 
-if (HybridSupport.IsElectronActive)
-{
-    builder.UseElectron(args, async () =>
-    {
-        var options = new BrowserWindowOptions
-        {
-            Show = false,
-            Width = 1600,
-            Height = 1000
-        };
-
-        if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux())
-        {
-            options.AutoHideMenuBar = true;
-        }
-
-        var browserWindow = await Electron.WindowManager.CreateWindowAsync(options);
-        browserWindow.OnReadyToShow += () => browserWindow.Show();
-        browserWindow.OnClosed += () => Electron.App.Quit();
-    });
-}
+builder.WebHost.UseElectron(args);
 
 var app = builder.Build();
 
@@ -53,6 +33,30 @@ app.MapStaticAssets();
 app.UseRouting();
 app.MapRazorPages()
     .WithStaticAssets();
+
+if (HybridSupport.IsElectronActive)
+{
+    app.Lifetime.ApplicationStarted.Register(() =>
+    {
+        _ = Task.Run(async () =>
+        {
+            var options = new BrowserWindowOptions
+            {
+                Show = true,
+                Width = 1600,
+                Height = 1000
+            };
+
+            if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux())
+            {
+                options.AutoHideMenuBar = true;
+            }
+
+            var browserWindow = await Electron.WindowManager.CreateWindowAsync(options, "http://localhost:8001");
+            browserWindow.OnClosed += () => Electron.App.Quit();
+        });
+    });
+}
 
 app.MapGet("/api/admin/status", () =>
 {
@@ -83,4 +87,4 @@ app.MapPost("/api/admin/clear", () =>
     return Results.Ok();
 });
 
-app.Run();
+app.Run("http://localhost:8001");
