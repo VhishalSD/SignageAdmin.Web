@@ -3,15 +3,18 @@
   "splashscreen": {
     "imageFile": ""
   },
-  "name": "SignageAdmin.Web",
-  "author": "",
+  "name": "signage-beheer",
+  "author": "Vhishal Tewari",
   "singleInstance": false,
   "environment": "Production",
   "build": {
-    "appId": "com.SignageAdmin.Web.app",
-    "productName": "SignageAdmin.Web",
-    "copyright": "Copyright © 2020",
+    "appId": "nl.reliplan.signagebeheer",
+    "productName": "Signage Beheer",
+    "copyright": "Copyright © 2026 Vhishal Tewari",
     "buildVersion": "1.0.0",
+    "win": {
+      "icon": "bin/Properties/AppIcon.ico"
+    },
     "compression": "maximum",
     "directories": {
       "output": "../../../bin/Desktop"
