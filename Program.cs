@@ -87,4 +87,4 @@ app.MapPost("/api/admin/clear", () =>
     return Results.Ok();
 });
 
-app.Run("http://localhost:8001");
+app.Run("http://0.0.0.0:8001");
