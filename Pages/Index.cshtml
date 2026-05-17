@@ -8,6 +8,9 @@
     var inactieve = Model.Slides.Count(slide => !slide.IsActief);
     var actieveSlides = Model.SlidesForPreview.ToList();
     var inactieveSlides = Model.Slides.Where(slide => !slide.IsActief).ToList();
+    var huidigVrijeSlideBestand = !string.IsNullOrWhiteSpace(Model.Afbeelding)
+        ? System.IO.Path.GetFileName(Model.Afbeelding)
+        : "";
 }
 
 <style>
@@ -531,6 +534,13 @@
                                 <label class="form-label">Vrije slide uploaden</label>
                                 <input id="vrijeSlideUploadInput" name="VrijeSlideUpload" type="file" class="form-control" accept=".jpg,.jpeg,.png,.gif,.pdf,image/jpeg,image/png,image/gif,application/pdf" />
                                 <div class="section-note mt-1">Geschikt voor losse content zoals een nieuwsbrief, flyer of mededeling. Ondersteund: JPG, JPEG, PNG, GIF en PDF.</div>
+
+                                @if (Model.IsEditMode && Model.Type == "vrije-slide" && !string.IsNullOrWhiteSpace(huidigVrijeSlideBestand))
+                                {
+                                    <div class="alert alert-secondary py-2 px-3 mt-2 mb-0 small">
+                                        Er is al een bestand gekoppeld aan deze vrije slide. Laat dit veld leeg om het huidige bestand te behouden.
+                                    </div>
+                                }
                             </div>
                             <div class="col-12" id="extraWrapper">
                                 <label class="form-label">Extra tekst</label>
@@ -545,7 +555,9 @@
                     <div class="form-preview-card">
                         <div class="form-preview-title mb-2">Afbeeldingscontrole op scherm</div>
                         <div id="formPreviewContent">
-                            <p class="section-note mb-3">Hier controleer je alleen of de juiste afbeelding is gekozen voor deze slide.</p>
+                            <p class="section-note mb-3">
+                                Hier controleer je alleen of de juiste afbeelding is gekozen. PDF-bestanden tonen hier alleen een blauwe controlekaart en zijn zichtbaar in de schermweergave.
+                            </p>
                             <div class="preview-frame mx-auto">
                                 <img id="afbeeldingPreview" src="" alt="Afbeeldingspreview" />
                             </div>
@@ -807,9 +819,39 @@
 
     function updateAfbeeldingPreview() {
         var afbeeldingInput = document.getElementById('afbeeldingInput');
+        var vrijeSlideUploadInput = document.getElementById('vrijeSlideUploadInput');
         var afbeeldingPreview = document.getElementById('afbeeldingPreview');
+        var typeSelect = document.getElementById('typeSelect');
 
-        if (!afbeeldingInput || !afbeeldingPreview) return;
+        if (!afbeeldingPreview) return;
+
+        var isVrijeSlide = typeSelect && typeSelect.value === 'vrije-slide';
+
+        if (isVrijeSlide && vrijeSlideUploadInput && vrijeSlideUploadInput.files && vrijeSlideUploadInput.files.length > 0) {
+            var file = vrijeSlideUploadInput.files[0];
+            var fileName = (file.name || '').toLowerCase();
+
+            if (file.type === 'application/pdf' || fileName.endsWith('.pdf')) {
+                afbeeldingPreview.onerror = null;
+                afbeeldingPreview.src = createPlaceholderDataUrl('#334155', 'PDF vrije slide');
+                return;
+            }
+
+            if (file.type && file.type.indexOf('image/') === 0) {
+                afbeeldingPreview.onerror = null;
+                afbeeldingPreview.src = URL.createObjectURL(file);
+                return;
+            }
+
+            afbeeldingPreview.onerror = null;
+            afbeeldingPreview.src = createPlaceholderDataUrl('#6c757d', 'Bestand gekozen');
+            return;
+        }
+
+        if (!afbeeldingInput) {
+            afbeeldingPreview.src = getPreviewPlaceholder();
+            return;
+        }
 
         var value = (afbeeldingInput.value || '').trim();
         var fallback = getPreviewPlaceholder();
@@ -831,6 +873,7 @@
 
         afbeeldingPreview.src = value;
     }
+    
 
     function toggleEnergieLabelField() {
         var bedrijfSelect = document.getElementById('bedrijfSelect');
@@ -940,6 +983,7 @@
 
         var bedrijfSelect = document.getElementById('bedrijfSelect');
         var afbeeldingInput = document.getElementById('afbeeldingInput');
+        var vrijeSlideUploadInput = document.getElementById('vrijeSlideUploadInput');
         var typeSelect = document.getElementById('typeSelect');
         if (bedrijfSelect) {
             bedrijfSelect.addEventListener('change', function () {
@@ -951,10 +995,14 @@
         if (typeSelect) {
             typeSelect.addEventListener('change', function () {
                 toggleTypeFields();
+                updateAfbeeldingPreview();
             });
         }
         if (afbeeldingInput) {
             afbeeldingInput.addEventListener('input', updateAfbeeldingPreview);
+        }
+        if (vrijeSlideUploadInput) {
+            vrijeSlideUploadInput.addEventListener('change', updateAfbeeldingPreview);
         }
     });
 </script>
