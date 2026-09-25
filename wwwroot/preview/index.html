@@ -827,6 +827,7 @@
         <div class="free-slide-media" id="free-slide-media"></div>
     </div>
 </div>
+<script src="/js/media-paths.js"></script>
 <script>
     function createPlaceholderDataUrl(backgroundColor, label) {
         var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">'
@@ -839,7 +840,7 @@
     }
     var WEATHER_API_KEY = "06322c6a982ff2505e5e14fddfe13da9";
     var WEATHER_CITY    = "Nieuwerkerk aan den IJssel";
-    var DATA_URL        = "/data/slides.json?v=" + Date.now();
+    var DATA_URL        = "/data/slides.json";
     var RELIPLAN_PLACEHOLDER = createPlaceholderDataUrl("#7a0030", "Afbeelding Reliplan");
     var VGE_PLACEHOLDER      = createPlaceholderDataUrl("#3cb54a", "Afbeelding Vastgoed Experts");
     var DEFAULT_SLIDE_DURATION = 10000;
@@ -848,6 +849,11 @@
     var currentIndex = 0;
     var properties   = [];
     var adminIsActive = false;
+    var slideshowTimer = null;
+    var slidesRefreshInFlight = false;
+    var slidesSignature = null;
+    var slidesLoadFailed = false;
+    var SLIDES_REFRESH_INTERVAL = 3000;
 
     function showPlayerMessage(message) {
         var messageEl = document.getElementById('player-message');
@@ -881,26 +887,29 @@
                 return response.json();
             })
             .then(function(status) {
-                var wasActive = adminIsActive;
-                adminIsActive = status && status.isActive === true;
-
-                if (adminIsActive) {
-                    showMaintenanceScreen();
-                    return;
-                }
-
-                if (wasActive && properties.length) {
-                    renderSlide(properties[currentIndex]);
-                }
+                setAdminActive(status && status.isActive === true);
             })
             .catch(function() {
-                adminIsActive = false;
+                setAdminActive(false);
             });
+    }
+
+    function setAdminActive(isActive) {
+        if (adminIsActive === isActive) return;
+        adminIsActive = isActive;
+        startSlideshow();
+        if (!adminIsActive) refreshSlides();
     }
 
 
     function normalizeSlides(data) {
-        return (data || [])
+        if (!Array.isArray(data) || data.some(function(item) {
+            return !item || typeof item !== 'object' || Array.isArray(item);
+        })) {
+            throw new Error("Ongeldige slidelijst.");
+        }
+
+        return data
             .filter(function(item) {
                 var isActief = (typeof item.IsActief !== "undefined") ? item.IsActief : item.isActief;
                 return isActief !== false;
@@ -1031,7 +1040,7 @@
 
         mediaEl.innerHTML = "";
 
-        var src = (item.uploadUrl || item.afbeelding || "").trim();
+        var src = SignageMedia.resolve(item.uploadUrl || item.afbeelding);
         if (!src) {
             mediaEl.innerHTML = '<div class="free-slide-error">Geen bestand gekoppeld aan deze vrije slide.</div>';
             return;
@@ -1047,7 +1056,26 @@
             iframe.style.overflow = 'hidden';
             iframe.style.pointerEvents = 'none';
 
-            mediaEl.appendChild(iframe);
+            // An iframe does not reliably fire onerror for an HTTP 404.
+            // Check local PDFs before showing the existing browser PDF viewer.
+            var marker = document.createElement('span');
+            mediaEl.appendChild(marker);
+            function pdfFailed() {
+                if (marker.parentNode === mediaEl) {
+                    mediaEl.innerHTML = '<div class="free-slide-error">Het gekoppelde PDF-bestand kon niet worden geladen.</div>';
+                }
+            }
+            function showPdf() {
+                if (marker.parentNode === mediaEl) mediaEl.replaceChild(iframe, marker);
+            }
+            if (new URL(src, location.origin).origin === location.origin) {
+                fetch(src, { method: 'HEAD', cache: 'no-store', signal: AbortSignal.timeout(5000) })
+                    .then(function(response) { if (response.ok) showPdf(); else pdfFailed(); })
+                    .catch(pdfFailed);
+            } else {
+                // Cross-origin PDF servers need not allow CORS requests.
+                showPdf();
+            }
             return;
         }
 
@@ -1055,6 +1083,7 @@
         img.src = src;
         img.alt = item.titel || "Vrije slide";
         img.onerror = function() {
+            if (img.parentNode !== mediaEl) return;
             mediaEl.innerHTML = '<div class="free-slide-error">Het gekoppelde bestand kon niet worden geladen.</div>';
         };
         mediaEl.appendChild(img);
@@ -1069,7 +1098,10 @@
     function fadeImage(imgEl, src, fallbackSrc) {
         if (!imgEl) return;
 
-        var requestedSrc = (src || "").trim();
+        var requestId = (imgEl._mediaRequestId || 0) + 1;
+        imgEl._mediaRequestId = requestId;
+        function isCurrent() { return imgEl._mediaRequestId === requestId; }
+        var requestedSrc = SignageMedia.resolve(src);
         var finalSrc = requestedSrc || fallbackSrc || "";
 
         if (!finalSrc) {
@@ -1082,25 +1114,30 @@
         imgEl.style.opacity = 0;
 
         setTimeout(function() {
+            if (!isCurrent()) return;
             var newImg = new Image();
 
             newImg.onload = function() {
+                if (!isCurrent()) return;
                 imgEl.src = finalSrc;
                 imgEl.offsetHeight;
                 imgEl.style.opacity = 1;
             };
 
             newImg.onerror = function() {
+                if (!isCurrent()) return;
                 if (fallbackSrc && finalSrc !== fallbackSrc) {
                     var fallbackImg = new Image();
 
                     fallbackImg.onload = function() {
+                        if (!isCurrent()) return;
                         imgEl.src = fallbackSrc;
                         imgEl.offsetHeight;
                         imgEl.style.opacity = 1;
                     };
 
                     fallbackImg.onerror = function() {
+                        if (!isCurrent()) return;
                         imgEl.style.opacity = 0;
                         imgEl.removeAttribute("src");
                         console.warn("Placeholder kon ook niet laden:", fallbackSrc);
@@ -1129,51 +1166,79 @@
     }
 
     function startSlideshow() {
-        if (!properties.length) return;
+        clearTimeout(slideshowTimer);
+        slideshowTimer = null;
+
+        if (adminIsActive) {
+            showMaintenanceScreen();
+            return;
+        }
+
+        if (!properties.length) {
+            document.querySelectorAll('[id^="tpl-"]').forEach(function(template) {
+                template.style.display = 'none';
+            });
+            showPlayerMessage(slidesSignature !== null
+                ? "Er zijn momenteel geen actieve slides beschikbaar."
+                : slidesLoadFailed
+                    ? "De schermgegevens konden niet worden geladen. Controleer de koppeling met het beheerscherm."
+                    : "Slides worden geladen...");
+            return;
+        }
 
         hidePlayerMessage();
-        checkAdminStatus();
-
-        if (!adminIsActive) {
-            renderSlide(properties[currentIndex]);
-        }
-
-        function nextSlide() {
-            var currentItem = properties[currentIndex];
-            var delay = getSlideDuration(currentItem);
-
-            setTimeout(function() {
-                if (!adminIsActive) {
-                    currentIndex = (currentIndex + 1) % properties.length;
-                    renderSlide(properties[currentIndex]);
-                }
-
-                nextSlide();
-            }, delay);
-        }
-
-        nextSlide();
+        renderSlide(properties[currentIndex]);
+        slideshowTimer = setTimeout(function() {
+            slideshowTimer = null;
+            currentIndex = (currentIndex + 1) % properties.length;
+            startSlideshow();
+        }, getSlideDuration(properties[currentIndex]));
     }
 
-    fetch(DATA_URL)
-        .then(function(r) {
+    async function refreshSlides() {
+        if (slidesRefreshInFlight) return;
+        slidesRefreshInFlight = true;
+        var controller = new AbortController();
+        var requestTimeout = setTimeout(function() { controller.abort(); }, 5000);
+
+        try {
+            var r = await fetch(DATA_URL + '?v=' + Date.now(), {
+                cache: 'no-store',
+                signal: controller.signal
+            });
             if (!r.ok) { throw new Error("HTTP " + r.status); }
-            return r.json();
-        })
-        .then(function(json) {
-            var data = normalizeSlides(json);
-            if (!data.length) {
-                console.error("Er zijn geen actieve slides beschikbaar.");
-                showPlayerMessage("Er zijn momenteel geen actieve slides beschikbaar.");
-                return;
-            }
+            var data = normalizeSlides(await r.json());
+            var signature = JSON.stringify(data);
+            if (signature === slidesSignature) return;
+
+            var currentSlide = properties[currentIndex];
+            var preservedIndex = currentSlide
+                ? data.findIndex(function(slide) { return slide.id === currentSlide.id; })
+                : -1;
             properties = data;
-            startSlideshow();
-        })
-        .catch(function(e) {
+            currentIndex = preservedIndex >= 0 ? preservedIndex : 0;
+            slidesSignature = signature;
+            slidesLoadFailed = false;
+
+            // Keep the current slide's remaining time when only other slides changed.
+            if (slideshowTimer === null || preservedIndex < 0
+                || JSON.stringify(currentSlide) !== JSON.stringify(properties[currentIndex])) {
+                startSlideshow();
+            }
+        } catch (e) {
             console.error("JSON fout:", e);
-            showPlayerMessage("De schermgegevens konden niet worden geladen. Controleer de koppeling met het beheerscherm.");
-        });
+            if (slidesSignature === null) {
+                slidesLoadFailed = true;
+                startSlideshow();
+            }
+        } finally {
+            clearTimeout(requestTimeout);
+            slidesRefreshInFlight = false;
+        }
+    }
+
+    refreshSlides();
+    setInterval(refreshSlides, SLIDES_REFRESH_INTERVAL);
 
     function updateDateTime() {
         var now  = new Date();

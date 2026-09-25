@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using SignageApp.Models;
 using SignageApp.Services;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using System;
@@ -13,7 +12,7 @@ namespace SignageAdmin.Web.Pages;
 public class IndexModel : PageModel
 {
     private readonly SlideService slideService;
-    private readonly IWebHostEnvironment environment;
+    private readonly StoragePaths storagePaths;
 
     public List<Slide> Slides { get; private set; } = new();
     public List<Slide> SlidesForPreview { get; private set; } = new();
@@ -65,10 +64,10 @@ public class IndexModel : PageModel
 
     public bool IsEditMode => EditId.HasValue && EditId.Value > 0;
 
-    public IndexModel(SlideService slideService, IWebHostEnvironment environment)
+    public IndexModel(SlideService slideService, StoragePaths storagePaths)
     {
         this.slideService = slideService;
-        this.environment = environment;
+        this.storagePaths = storagePaths;
     }
 
     public void OnGet(int? editId)
@@ -340,7 +339,7 @@ public class IndexModel : PageModel
             return Afbeelding ?? "";
         }
 
-        string uploadsFolder = Path.Combine(environment.WebRootPath, "uploads");
+        string uploadsFolder = storagePaths.UploadsPath;
         Directory.CreateDirectory(uploadsFolder);
 
         string extension = Path.GetExtension(VrijeSlideUpload.FileName).ToLowerInvariant();

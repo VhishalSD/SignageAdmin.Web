@@ -1,19 +1,16 @@
 using System.Text.Json;
 using SignageApp.Models;
-using Microsoft.AspNetCore.Hosting;
 
 namespace SignageApp.Services;
 
 public class SlideService
 {
     private readonly string filePath;
-    private readonly IWebHostEnvironment environment;
     private List<Slide> slides;
 
-    public SlideService(IWebHostEnvironment environment)
+    public SlideService(StoragePaths storagePaths)
     {
-        this.environment = environment;
-        filePath = ResolveStoragePath();
+        filePath = storagePaths.SlidesPath;
         slides = LoadSlides();
     }
 
@@ -118,42 +115,33 @@ public class SlideService
 
     private List<Slide> LoadSlides()
     {
-        if (!File.Exists(filePath))
-        {
-            List<Slide> defaultSlides = CreateDefaultSlides();
-            SaveSlides(defaultSlides);
-            return defaultSlides;
-        }
-
         try
         {
             string json = File.ReadAllText(filePath);
-
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                List<Slide> defaultSlides = CreateDefaultSlides();
-                SaveSlides(defaultSlides);
-                return defaultSlides;
-            }
-
             List<Slide>? loadedSlides = JsonSerializer.Deserialize<List<Slide>>(json);
 
-            if (loadedSlides == null || loadedSlides.Count == 0)
+            if (loadedSlides == null || loadedSlides.Any(slide => slide == null))
             {
-                List<Slide> defaultSlides = CreateDefaultSlides();
-                SaveSlides(defaultSlides);
-                return defaultSlides;
+                throw new JsonException("Het bestand moet een JSON-array met slides bevatten.");
             }
 
             return loadedSlides
                 .OrderBy(slide => slide.Volgorde)
                 .ToList();
         }
-        catch
+        catch (FileNotFoundException)
         {
             List<Slide> defaultSlides = CreateDefaultSlides();
-            SaveSlides(defaultSlides);
+            using FileStream stream = new(filePath, FileMode.CreateNew, FileAccess.Write);
+            JsonSerializer.Serialize(stream, defaultSlides.OrderBy(slide => slide.Volgorde),
+                new JsonSerializerOptions { WriteIndented = true });
             return defaultSlides;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException)
+        {
+            throw new InvalidDataException(
+                $"Kan slides niet laden uit '{filePath}': de opslag is onleesbaar of bevat geen geldige slidelijst. Het bestaande bestand is niet gewijzigd.",
+                exception);
         }
     }
 
@@ -184,21 +172,6 @@ public class SlideService
         {
             slides[i].Volgorde = i + 1;
         }
-    }
-
-    private string ResolveStoragePath()
-    {
-        string webRootPath = environment.WebRootPath;
-
-        if (string.IsNullOrWhiteSpace(webRootPath))
-        {
-            webRootPath = Path.Combine(environment.ContentRootPath, "wwwroot");
-        }
-
-        string dataDirectory = Path.Combine(webRootPath, "data");
-        Directory.CreateDirectory(dataDirectory);
-
-        return Path.Combine(dataDirectory, "slides.json");
     }
 
     private Slide CloneSlide(Slide slide)

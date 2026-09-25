@@ -15,15 +15,16 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Properties\TrayIcon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Properties\AppIcon.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Update="Properties\electron-builder.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <TargetPath>electron-builder.json</TargetPath>
-    </Content>
+    <!-- Runtime datasets must never become installer payload. Development files stay in place. -->
+    <Content Update="wwwroot\data\**\*;wwwroot\uploads\**\*" CopyToPublishDirectory="Never" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ElectronNET.API" Version="23.6.2" />
@@ -33,4 +34,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <Target Name="WriteDevelopmentContentRoot" AfterTargets="Build">
+    <WriteLinesToFile File="$(TargetDir)$(AssemblyName).development-root"
+                      Lines="$(MSBuildProjectDirectory)"
+                      Overwrite="true"
+                      WriteOnlyWhenDifferent="true" />
+  </Target>
 </Project>

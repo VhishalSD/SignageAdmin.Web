@@ -2,3 +2,11 @@
 .idea/
 bin/
 obj/
+
+# Generated tooling output and installer artifacts
+/outputs/
+node_modules/
+*.log
+*.development-root
+*.exe
+*.blockmap

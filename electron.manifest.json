@@ -5,15 +5,25 @@
   },
   "name": "signage-beheer",
   "author": "Vhishal Tewari",
-  "singleInstance": false,
+  "singleInstance": true,
+  "aspCoreBackendPort": 8001,
   "environment": "Production",
   "build": {
     "appId": "nl.reliplan.signagebeheer",
     "productName": "Signage Beheer",
-    "copyright": "Copyright © 2026 Vhishal Tewari",
+    "copyright": "Copyright \u00a9 2026 Vhishal Tewari",
     "buildVersion": "1.0.0",
     "win": {
-      "icon": "bin/Properties/AppIcon.ico"
+      "icon": "bin/Properties/AppIcon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "compression": "maximum",
     "directories": {
@@ -23,16 +33,26 @@
       {
         "from": "./bin",
         "to": "bin",
-        "filter": [ "**/*" ]
+        "filter": [
+          "**/*",
+          "!wwwroot/data/**",
+          "!wwwroot/uploads/**",
+          "!*.development-root"
+        ]
       }
     ],
     "files": [
-      {
-        "from": "./ElectronHostHook/node_modules",
-        "to": "ElectronHostHook/node_modules",
-        "filter": [ "**/*" ]
-      },
-      "**/*"
-    ]
+      "**/*",
+      "!bin/**"
+    ],
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false,
+      "installerIcon": "bin/Properties/AppIcon.ico",
+      "uninstallerIcon": "bin/Properties/AppIcon.ico",
+      "installerHeaderIcon": "bin/Properties/AppIcon.ico"
+    }
   }
 }
